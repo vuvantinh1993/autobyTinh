@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using xNet;
+using System.Windows.Forms;
 
 namespace autohana
 {
@@ -36,10 +36,14 @@ namespace autohana
         Sad,
     }
 
+    public class TypeFile
+    {
+        public static string Txt = "txt";
+        public static string Html = "html";
+    }
+
     public static class Common
     {
-        public static int _valueActionDelayFrom = Auto._delayFrom;
-        public static int _valueActionDelayTo = Auto._delayTo;
 
         public static void Delay(int seconde)
         {
@@ -60,11 +64,7 @@ namespace autohana
             int randomTime = (new Random()).Next(valueFrom, valueTo);
             return randomTime;
         }
-        public static int DalayTimeActionRamdom()
-        {
-            int randomTime = (new Random()).Next(_valueActionDelayFrom, _valueActionDelayTo);
-            return randomTime;
-        }
+
 
 
         public static ReadOnlyCollection<IWebElement> WaitGetElement(IWebDriver chromeDriver, By xpath, int thoiGianDoi)
@@ -91,18 +91,20 @@ namespace autohana
             return result;
         }
 
-        // Thời gian chờ để click nut follow hoặc like.......
-        public static void ChoClickButtonFB()
+        public static void ChoClickButtonFB(int rowId, DataGridView dgvAccounts, int delayFrom, int delayTo, string nameJob = "thao tác")
         {
-            var randomTime = (new Random()).Next(_valueActionDelayFrom, _valueActionDelayTo);
-            var dem = 0;
-            while (dem < randomTime)
-            {
-                Thread.Sleep(1000);
-                dem++;
-                randomTime--;
-            }
+            var a = delayFrom;
+            Thread.Sleep(3000);
+
+            //var randomTime = (new Random()).Next(Auto._delayFrom, Auto._delayTo);
+            //while (randomTime > 0)
+            //{
+            //    _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Click {nameJob} sau {randomTime} giây";
+            //    Thread.Sleep(1000);
+            //    randomTime--;
+            //}
         }
+
 
         public static bool FindAndClickEle(string xpath, IWebDriver chromeDriver, int solantim = 10, int timemilisecondsdelay = 2)
         {

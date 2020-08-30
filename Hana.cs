@@ -16,7 +16,7 @@ using System.Windows.Forms;
 
 namespace autohana
 {
-    public class Hana
+    public class Hana : Auto
     {
         private string _userName;
         private string _pass;
@@ -44,6 +44,7 @@ namespace autohana
             Common.DelayMiliSeconde(2000);
             if (chromeDriver.Url == _urlHomeHana)
             {
+                _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập Hana thành công, chọn tài khoản làm việc";
                 return "asdsad";
             }
             else if (chromeDriver.Url == _urlLoginHana)
@@ -51,12 +52,13 @@ namespace autohana
                 var token = LoginUidAndPass(chromeDriver);
                 if (token != null)
                 {
+                    _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập Hana thành công, chọn tài khoản làm việc";
                     return token;
                 }
             }
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập Hana thất bại";
             return null;
         }
-
         private string LoginUidAndPass(IWebDriver chromeDriver)
         {
             chromeDriver.FindElement(By.Name("username")).SendKeys(_userName);
@@ -76,7 +78,7 @@ namespace autohana
             int checkTokenfalse = 0;
         GOTO_LAY_JOB:
             chromeDriver.Url = _urlListJobFb;
-            Common.DelayMiliSeconde(1000);
+            TatLopPhuVaDoiLoadHana(chromeDriver);
             if (demGiaiJob > 2)
             {
                 _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Số lần giải capcha khong thanh {demGiaiJob}";
@@ -84,30 +86,17 @@ namespace autohana
             }
 
 
-            if (Common.FindEle("/html/body/div[1]/div/div/div/main/div/div/div/div/div/div/div[2]/div/div/div/div[2]/div[4]/div[1]", chromeDriver, 2, 1))
+            if (Common.FindEle("//div[@data-v-67e4251b=''and@class='col col-12']", chromeDriver, 2, 1))
             {
                 checkTokenfalse = 2;
-                // tìm thấy danh sách job
-                var danhsachJob = chromeDriver.FindElements(By.XPath("//*[@id=\"app\"]/div/main/div/div/div/div/div/div/div[2]/div/div/div/div[2]/div[4]/div")).ToArray();
-                if (danhsachJob.Count() > 0)
+                // click Job dau tien
+                chromeDriver.FindElements(By.XPath("//div[@data-v-67e4251b=''and@class='col col-12']"))[0].Click();
+                TatLopPhuVaDoiLoadHana(chromeDriver);
+                if (chromeDriver.Url == _urlListJobFb)
                 {
-                    if (danhsachJob.Count() <= 2)
-                    {
-                        soLanLayItJobLienTiep++;
-                    }
-                    else
-                    {
-                        soLanLayItJobLienTiep = 0;
-                    }
-                    danhsachJob[0].Click();
-                    Common.DelayMiliSeconde(2000);
-                    if (chromeDriver.Url == _urlListJobFb)
-                    {
-                        Common.DelayMiliSeconde(1500);
-                        goto GOTO_LAY_JOB;
-                    }
-                    return true;
+                    goto GOTO_LAY_JOB;
                 }
+                return true;
             }
             else if (Common.FindEle("/html/body/div[1]/div/div/div/main/div/div/div/div/div/div/div[2]/div/div/div/div[1]/div/iframe", chromeDriver, 1, 0))
             {
@@ -140,25 +129,42 @@ namespace autohana
                     var m = chromeDriver.FindElements(By.XPath("//iframe[contains(@src,'google.com')]")).ToArray();
                     m[0].Click();
                     Common.DelayMiliSeconde(1000);
-                    if (!chromeDriver.PageSource.Contains("opacity 0.3s linear 0s; opacity: 1; visibility:"))
+                    if (!chromeDriver.PageSource.Contains("<iframe title=\"recaptcha challenge\""))
                     {
-                        DoiLoadHana(chromeDriver);
+                        TatLopPhuVaDoiLoadHana(chromeDriver);
                         goto GOTO_LAY_JOB;
                     }
                     else
                     {
                         chromeDriver.Navigate().Refresh();
+                        TatLopPhuVaDoiLoadHana(chromeDriver);
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                 }
-
 
                 // cos capcha Giải capcha ở đây
                 var checkresolveCapcha = ExampleNoCaptchaProxyless("https://fb.vieclamonline.org/jobs/facebook", chromeDriver, ref socapchadagiai);
                 if (checkresolveCapcha.value)
                 {
+                    try
+                    {
+                        var danhsachJob = chromeDriver.FindElements(By.XPath("//*[@id=\"app\"]/div/main/div/div/div/div/div/div/div[2]/div/div/div/div[2]/div[4]/div")).ToArray();
+                        if (danhsachJob.Count() > 0)
+                        {
+                            if (danhsachJob.Count() <= 2)
+                            {
+                                soLanLayItJobLienTiep++;
+                            }
+                            else
+                            {
+                                soLanLayItJobLienTiep = 0;
+                            }
+                        }
+                    }
+                    catch (Exception) { }
+
                     demGiaiJob = 0;
                     // giai capcha thanh cong
                     goto GOTO_LAY_JOB;
@@ -257,9 +263,12 @@ namespace autohana
                     var query = "___grecaptcha_cfg.clients[0]" + noidung.ToString() + $"'{resolveCapcha}')";
                     js.ExecuteScript("document.getElementById('g-recaptcha-response').innerHTML='" + resolveCapcha + "';");
                     js.ExecuteScript(query);
-                    while (chromeDriver.PageSource.Contains("opacity: 0.46; background-color: rgb(33, 33, 33); border-color: rgb(33, 33, 33);"))
+                    if (chromeDriver.PageSource.Contains("opacity: 0.46; background-color: rgb(33, 33, 33)"))
                     {
-                        Common.DelayMiliSeconde(1000);
+                        while (chromeDriver.PageSource.Contains("opacity: 0.46; background-color: rgb(33, 33, 33)"))
+                        {
+                            Common.DelayMiliSeconde(1000);
+                        }
                     }
                     _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Giải capcha thành công";
                     return (true, "Giải capcha thành công!");
@@ -269,9 +278,10 @@ namespace autohana
                 return (false, "Không thể load được trang sau khi giai capcha 2");
             }
         }
-        public (bool rs, int jobLamHonNay) SelectAccountLeanJob(IWebDriver chromeDriver, string nameAccount)
+        public bool SelectAccountLeanJob(IWebDriver chromeDriver, string nameAccount)
         {
             chromeDriver.Url = _urlListJobFb;
+            TatLopPhuVaDoiLoadHana(chromeDriver);
             Common.Delay(1);
             var jobLamHonNay = 0;
             try
@@ -287,14 +297,26 @@ namespace autohana
                         Regex regex2 = new Regex(@"[0-9]{1,4}");
                         jobLamHonNay = Convert.ToInt32(regex2.Match(b).Value);
                         listuser[i].Click();
-                        return (true, jobLamHonNay);
+                        if (jobLamHonNay >= _JobMaxOfDay)
+                        {
+                            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"đã hoàn thành {jobLamHonNay} Job";
+                            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = jobLamHonNay;
+                            return false;
+                        }
+                        else
+                        {
+                            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Chọn tài khoản làm việc thành công.";
+                            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = jobLamHonNay;
+                            return true;
+                        }
                     }
                 }
             }
             catch (Exception)
             {
             }
-            return (false, jobLamHonNay);
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Không tồn tại tài khoản trong hana";
+            return false;
         }
 
         public string LayKeyThemTaiKhoanHana(IWebDriver chromeDriver)
@@ -312,7 +334,7 @@ namespace autohana
                 _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Mã code Hana là {noidung}";
                 return noidung;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Lỗi, không lấy được mã Code Hana";
             }
@@ -327,11 +349,11 @@ namespace autohana
                 chromeDriver.FindElement(By.XPath("//div[@class= 'allow paste_data']")).SendKeys(urlBaiviet);
                 Common.DelayMiliSeconde(1000);
                 chromeDriver.FindElement(By.XPath("//div[@class= 'text-center confirm white--text pa-3 v-card v-card--flat v-sheet theme--light']")).Click();
-                DoiLoadHana(chromeDriver);
+                TatLopPhuVaDoiLoadHana(chromeDriver);
                 _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Thêm vào Hana thành công";
                 return true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Không thêm được Hana";
             }
@@ -345,6 +367,21 @@ namespace autohana
             while (chromeDriver.PageSource.Contains("opacity: 0.46; background-color: rgb(33, 33, 33); border-color: rgb(33, 33, 33);"))
             {
                 Common.DelayMiliSeconde(1000);
+            }
+        }
+
+        private void TatLopPhuVaDoiLoadHana(IWebDriver chromeDriver)
+        {
+            try
+            {
+                DoiLoadHana(chromeDriver);
+                var nut = chromeDriver.FindElement(By.XPath("//div[@class='v-overlay__scrim']"));
+                IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                js.ExecuteScript("return document.getElementsByClassName('v-overlay v-overlay--active theme--dark')[0].remove();");
+                js.ExecuteScript("return document.getElementsByClassName('white--text v-navigation-drawer v-navigation-drawer--fixed v-navigation-drawer--is-mobile v-navigation-drawer--open theme--light deep-purple darken-4')[0].remove();");
+            }
+            catch (Exception)
+            {
             }
         }
     }

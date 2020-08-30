@@ -90,7 +90,9 @@
     <Compile Include="Capcha\TaskResultResponse.cs" />
     <Compile Include="Chrome.cs" />
     <Compile Include="Common.cs" />
-    <Compile Include="Hana.cs" />
+    <Compile Include="Hana.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Model.cs" />
     <Compile Include="XLFile.cs" />
     <Compile Include="Auto.cs">
@@ -100,7 +102,7 @@
       <DependentUpon>Auto.cs</DependentUpon>
     </Compile>
     <Compile Include="FaceBook.cs" />
-    <Compile Include="GhiLog.cs" />
+    <Compile Include="GhiFile.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Auto.resx">

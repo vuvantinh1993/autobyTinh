@@ -31,6 +31,7 @@ namespace autohana
         public static int _delayFrom = 0;
         public static int _delayTo = 0;
         public static int _JobMaxOfDay = 0;
+        public bool _chiBackupnguoimoi1 = true;
 
 
         public Auto()
@@ -41,16 +42,81 @@ namespace autohana
             this.socapgiaikhongthanh.Text = "0";
             this.sotiennhan.Text = "0";
             this.dgvAccounts.DataSource = XLFile.DocFileTaiKhoan("config/accounts.txt");
-            _delayFrom = (int)this.delayFrom.Value;
-            _delayTo = (int)this.delayTo.Value;
-            _JobMaxOfDay = (int)this.JobMaxOfDay.Value;
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        public bool SetUpChrome(ref ChromeDriverService chromeDriverService, ref ChromeOptions chromeOptions, int rowIndex)
         {
+            chromeDriverService.SuppressInitialDiagnosticInformation = true;
+            chromeDriverService.HideCommandPromptWindow = true;
+            if ((bool)this.dgvAccounts.Rows[rowIndex].Cells["An"].Value)
+            {
+                chromeOptions.AddArgument("--headless");
+            }
+            chromeOptions.AddArguments(new string[]
+            {
+                    "--disable-blink-features=AutomationControlled"
+            });
+            chromeOptions.AddArgument($"--user-agent={this.dgvAccounts.Rows[rowIndex].Cells["userAgent"].Value.ToString()}");
+            if (this.checkLoadImage.Checked)
+            {
+                chromeOptions.AddArguments(new string[]
+                {
+                    "--blink-settings=imagesEnabled=false"
+                });
+                chromeOptions.AddArguments(new string[]
+                {
+                    "--enable-automation"
+                });
+                chromeOptions.AddAdditionalCapability("useAutomationExtension", false);
+            }
 
+            try
+            {
+                //chromeOptions.AddArguments(new string[]
+                //{
+                //    "--start-maximized"
+                //});
+                chromeOptions.AddArguments(new string[]
+                {
+                    "--disable-notifications"
+                });
+                chromeOptions.AddArguments(new string[]
+                {
+                    "--disable-popup-blocking"
+                });
+                chromeOptions.AddArguments(new string[]
+                {
+                    "--disable-geolocation"
+                });
+                chromeOptions.AddArguments(new string[]
+                {
+                    "--no-sandbox"
+                });
+                chromeOptions.AddArguments(new string[]
+                {
+                    "--disable-gpu"
+                });
+                CheckAndAddProfile(ref chromeOptions, rowIndex);
+                try
+                {
+                    chromeDriver[rowIndex] = new ChromeDriver(chromeDriverService, chromeOptions);
+                    chromeDriver[rowIndex].Manage().Window.Size = new Size(400, 850);
+                }
+                catch (Exception)
+                {
+                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Trình duyệt cùng profile đang bật, hãy tắt đi chạy lại";
+                    dgvAccounts.Rows[rowIndex].Cells["Action"].Value = "Bắt đầu";
+                    return false;
+                }
+                chromeDriver[rowIndex].Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(1);
+                return true;
+            }
+            catch (Exception)
+            {
+                this.dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Có lỗi khi add arguments, tắt đi chạy lại";
+            }
+            return false;
         }
-
         private void UpdateSoCapDagiai(int socapchadagiai)
         {
             this.socapdagiai.Text = socapchadagiai.ToString();
@@ -106,48 +172,52 @@ namespace autohana
                         this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Đăng kí";
                     }
                 }
+                if (e.ColumnIndex == 22) // backup checkpoint
+                {
+                    if (this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value.ToString() == "BackUp")
+                    {
+                        BackUpFacebook(e.RowIndex);
+                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Huỷ";
+                    }
+                    else
+                    {
+                        // xử lý code
+                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "BackUp";
+                    }
+                }
             }
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
+            if (senderGrid.Columns[e.ColumnIndex] is DataGridViewCheckBoxColumn && e.RowIndex >= 0)
+            {
+                // click Tạm dừng
+                if (e.ColumnIndex == 14)
+                {
+                    if ((bool)this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value)
+                    {
+                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = false;
+                    }
+                    else
+                    {
+                        // xử lý code
+                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = true;
+                    }
+                }
+            }
         }
 
         private void ChayJobHana(int rowIndex)
         {
-            #region Load Job max
-            this.JobMaxOfDay.Invoke(new Action(() =>
-            {
-                _JobMaxOfDay = (int)this.JobMaxOfDay.Value;
-            }));
-            #endregion
             Task t = new Task(() =>
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex);
-                try
-                {
-                    chromeDriver[rowIndex] = new ChromeDriver(chromeDriverService, chromeOptions);
-                }
-                catch (Exception)
-                {
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Trình duyệt cùng profile đang bật, hãy tắt đi chạy lại";
-                    dgvAccounts.Rows[rowIndex].Cells["Action"].Value = "Bắt đầu";
-                    return;
-                }
-                chromeDriver[rowIndex].Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(1);
+                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                UpdateValueFormForFb(ref facebook);
                 string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null)
-                {
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Đăng nhập Fb thất bại";
-                }
-                else
-                {
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Đăng nhập Fb thành công!";
-                }
-                // nếu login được thì làm tiếp
+                if (userIdFb == null) { return; }
+
+                // nếu login fb được thì làm tiếp
                 if (this.dgvAccounts.Rows[rowIndex].Cells["hana"].Value.ToString() != null && this.dgvAccounts.Rows[rowIndex].Cells["passhana"].Value.ToString() != null && (bool)this.dgvAccounts.Rows[rowIndex].Cells["runhana"].Value)
                 {
                     Hana hana = new Hana(this.dgvAccounts.Rows[rowIndex].Cells["hana"].Value.ToString(),
@@ -155,53 +225,21 @@ namespace autohana
                     string token = hana.LoginHana(chromeDriver[rowIndex]);
                     if (token != null)
                     {
-                        dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Đăng nhập Hana thành công, chọn tài khoản làm việc";
                         #region chọn tài khoản làm việc
-                        var rsSelectAccount = hana.SelectAccountLeanJob(chromeDriver[rowIndex], dgvAccounts.Rows[rowIndex].Cells["name"].Value.ToString());
-                        if (rsSelectAccount.jobLamHonNay >= _JobMaxOfDay)
-                        {
-                            dgvAccounts.Rows[rowIndex].Cells["status"].Value = $"đã hoàn thành {rsSelectAccount.jobLamHonNay} Job";
-                            dgvAccounts.Rows[rowIndex].Cells["total"].Value = rsSelectAccount.jobLamHonNay;
-                            return;
-                        }
-                        else if (rsSelectAccount.rs)
-                        {
-                            dgvAccounts.Rows[rowIndex].Cells["status"].Value = $"Chọn tài khoản làm việc.";
-                            dgvAccounts.Rows[rowIndex].Cells["total"].Value = rsSelectAccount.jobLamHonNay;
-                        }
-                        else
-                        {
-                            dgvAccounts.Rows[rowIndex].Cells["status"].Value = $"Không tồn tại tài khoản trong hana";
-                            return;
-                        }
+                        if (!hana.SelectAccountLeanJob(chromeDriver[rowIndex], dgvAccounts.Rows[rowIndex].Cells["name"].Value.ToString())) return;
                         #endregion
+
                         while (true)
                         {
-                            #region điều chỉnh thời gian delay thao tác, và Job max
-                            this.delayFrom.Invoke(new Action(() =>
-                            {
-                                _delayFrom = (int)this.delayFrom.Value;
-                            }));
-                            this.delayTo.Invoke(new Action(() =>
-                            {
-                                _delayTo = (int)this.delayTo.Value;
-                            }));
-                            this.JobMaxOfDay.Invoke(new Action(() =>
-                            {
-                                _JobMaxOfDay = (int)this.JobMaxOfDay.Value;
-                            }));
-                            #endregion
-
-                            while ((bool)dgvAccounts.Rows[rowIndex].Cells["stop"].Value)
-                            {
-                                Common.DelayMiliSeconde(2000);
-                            }
+                            CheckStopAppAuto(rowIndex); // kiểm tra tạm dừng
+                            UpdateValueFormForFb(ref facebook);
 
                             dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Đi lấy Job Hana";
                             bool takeJob = hana.LayMotJobAndClick(chromeDriver[rowIndex], ref _soCapchaDagiai, ref _soCapchaDagiaiKhongthanh);
                             if (takeJob)
                             {
                                 var rsLamJob = facebook.LamJob(chromeDriver[rowIndex], ref _soTienDalam, ref _solanKhonggiaiduocTien);
+
                                 if (rsLamJob.isError5Finish == true)
                                 {
                                     dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Hoàn thành Job lỗi liên tục 5 lần";
@@ -252,43 +290,23 @@ namespace autohana
             t.Start();
             Common.DelayMiliSeconde(1000);
         }
-
-
         private void ChayDangKiHana(int rowIndex)
         {
             Task t = new Task(() =>
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex);
-                try
-                {
-                    chromeDriver[rowIndex] = new ChromeDriver(chromeDriverService, chromeOptions);
-                }
-                catch (Exception)
-                {
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Trình duyệt cùng profile đang bật, hãy tắt đi chạy lại";
-                    dgvAccounts.Rows[rowIndex].Cells["Action"].Value = "Bắt đầu";
-                    return;
-                }
-                chromeDriver[rowIndex].Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(1);
+                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
                 string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null)
-                {
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Đăng nhập Fb thất bại";
-                }
-                else
-                {
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Đăng nhập Fb thành công!";
-                }
+                if (userIdFb == null) { return; }
 
                 // mả tab 2 Hana
                 Actions actionProvider = new Actions(chromeDriver[rowIndex]);
                 ((IJavaScriptExecutor)chromeDriver[rowIndex]).ExecuteScript("window.open();");
                 string originalWindow = chromeDriver[rowIndex].CurrentWindowHandle;
                 chromeDriver[rowIndex].SwitchTo().Window(chromeDriver[rowIndex].WindowHandles.Last());
-
 
                 // nếu login được thì làm tiếp
                 if (this.dgvAccounts.Rows[rowIndex].Cells["hana"].Value.ToString() != null && this.dgvAccounts.Rows[rowIndex].Cells["passhana"].Value.ToString() != null)
@@ -331,73 +349,42 @@ namespace autohana
             t.Start();
             Common.DelayMiliSeconde(1000);
         }
-
-        public void PathStatusDaGirlView(int rowIndex, string noidung)
+        public void CheckStopAppAuto(int rowIndex)
         {
-            dgvAccounts.Rows[rowIndex].Cells["status"].Value = noidung;
-        }
-
-        public void SetUpChrome(ref ChromeDriverService chromeDriverService, ref ChromeOptions chromeOptions, int rowIndex)
-        {
-            chromeDriverService.SuppressInitialDiagnosticInformation = true;
-            chromeDriverService.HideCommandPromptWindow = true;
-            if ((bool)this.dgvAccounts.Rows[rowIndex].Cells["An"].Value)
+            var checkStop = (bool)dgvAccounts.Rows[rowIndex].Cells["stop"].Value;
+            if (checkStop)
             {
-                chromeOptions.AddArgument("--headless");
-            }
-            chromeOptions.AddArguments(new string[]
-            {
-                    "--disable-blink-features=AutomationControlled"
-            });
-            chromeOptions.AddArgument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4209.0 Safari/537.36");
-            if (this.checkLoadImage.Checked)
-            {
-                chromeOptions.AddArguments(new string[]
+                dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Dừng chạy";
+                while ((bool)dgvAccounts.Rows[rowIndex].Cells["stop"].Value)
                 {
-                    "--blink-settings=imagesEnabled=false"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--enable-automation"
-                });
-                chromeOptions.AddAdditionalCapability("useAutomationExtension", false);
-            }
-
-            try
-            {
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--start-maximized"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--disable-notifications"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--disable-popup-blocking"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--disable-geolocation"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--no-sandbox"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--disable-gpu"
-                });
-                CheckAndAddProfile(ref chromeOptions, rowIndex);
-                //chromeOptions.AddArgument(string.Format("user-data-dir={0}", arg));
-                //this.chromeDriver_0[int_64] = new ChromeDriver(chromeDriverService, chromeOptions);
-            }
-            catch (Exception)
-            {
-                this.dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Có lỗi khi add arguments";
+                    Task.Delay(1000);
+                }
+                dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Huỷ tạm dừng tiếp tục chạy";
             }
         }
+        public void UpdateValueFormForFb(ref FaceBook facebook)
+        {
+            #region điều chỉnh thời gian delay thao tác, và Job max
+            this.delayFrom.Invoke(new Action(() =>
+            {
+                _delayFrom = (int)this.delayFrom.Value;
+            }));
+            this.delayTo.Invoke(new Action(() =>
+            {
+                _delayTo = (int)this.delayTo.Value;
+            }));
+            this.JobMaxOfDay.Invoke(new Action(() =>
+            {
+                _JobMaxOfDay = (int)this.JobMaxOfDay.Value;
+            }));
+            this.isCheckBackUpFriendNew.Invoke(new Action(() =>
+            {
+                _chiBackupnguoimoi1 = (bool)this.isCheckBackUpFriendNew.Checked;
+            }));
+            #endregion
+            facebook.ChangeValueWithForm(_delayFrom, _delayTo, _chiBackupnguoimoi1);
+        }
+
 
         private void CheckAndAddProfile(ref ChromeOptions chromeOptions, int rowIndex)
         {
@@ -464,6 +451,39 @@ namespace autohana
                 process.Kill();
             }
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            var accounts = File.ReadAllLines("config/accounts.txt");
+            List<string> listAccountNew = new List<string>();
+            foreach (var item in accounts)
+            {
+                var splitItem = item.Split('|');
+                var str = $"{ splitItem[0] }|{ splitItem[1] }|{ splitItem[2] }|{ splitItem[5] }|{ splitItem[6] }|{ splitItem[7] }|{ splitItem[8] }|{ splitItem[9] }|{ splitItem[3] }|{ splitItem[4] }|{ splitItem[10] }|{ splitItem[11] }|{ splitItem[12] }|{ splitItem[13] }|{ splitItem[14]}|1";
+                listAccountNew.Add(str);
+            }
+            File.WriteAllLines("config/account.txt", listAccountNew);
+        }
+
+
+        #region BackUp Facebook
+        private void BackUpFacebook(int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                UpdateValueFormForFb(ref facebook);
+                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
+                if (userIdFb == null) { return; }
+                facebook.BackUpFacebook(chromeDriver[rowIndex]);
+            });
+            t.Start();
+        }
+        #endregion
     }
 
 

@@ -48,6 +48,8 @@ namespace autohana
         public int ReWork { get; set; }
         public string Action { get; set; }
         public string DKhana { get; set; }
+        public string UserAgent { get; set; }
+        public string BackUp { get; set; }
     }
 
 

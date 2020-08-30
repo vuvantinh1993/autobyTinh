@@ -1,4 +1,6 @@
-﻿using OpenQA.Selenium;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using System;
@@ -7,21 +9,24 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
-using xNet;
 
 namespace autohana
 {
-    public class FaceBook
+    public partial class FaceBook
     {
         private string _urlhomeFb { get => "https://www.facebook.com/"; }
         private string _urlhomembasicFb { get => "https://mbasic.facebook.com/"; }
         private string _urlLogin { get => "https://facebook.com/login"; }
-
+        private string _urlhomeMFb { get => "https://m.facebook.com/home.php"; }
         private DataGridView _dgvAccounts;
         private int _rowIndex;
+        private static int _delayFrom;
+        private static int _delayTo;
+        private static bool _chiBackupnguoimoi = true;
 
         public FaceBook(DataGridView dgvAccounts, int rowIndex)
         {
@@ -29,15 +34,40 @@ namespace autohana
             _rowIndex = rowIndex;
         }
 
+        #region trả về 1 số url Facebook
+        private string UrlInfomationMFa(string urlProfile, string Uid)
+        {
+            return $"{urlProfile}/about?lst={Uid}%3A{Uid}%3A1598723261";
+        }
+        private string UrlFrienfListMFa(string urlProfile, string Uid)
+        {
+            return $"{urlProfile}/friends?lst={Uid}%3A{Uid}%3A1598723261";
+        }
+        private string UrlFriendNewListMfa(string UidProfile)
+        {
+            return $"https://www.facebook.com/{UidProfile}/friends_recent";
+        }
+        private string UrlAlbulmImageMFa(string Uid)
+        {
+            return $"https://m.facebook.com/profile.php?v=photos&lst=100027294830101%3A{Uid}%3A1598778805&id={Uid}";
+        }
+        private string UrlProfileMFa(string Uid)
+        {
+            return $"https://m.facebook.com/{Uid}";
+        }
+        #endregion
+
+        #region Login Facebook
         // trả vể uId
         public string Login(IWebDriver chromeDriver)
         {
             _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đi đăng nhập Facebook";
             chromeDriver.Url = _urlLogin;
-            var userId = GetUserIdFromHome(chromeDriver);
-            if (userId != null)
+            Task.Delay(1000);
+            if (chromeDriver.Url.Contains(_urlhomeMFb))
             {
-                return userId;
+                _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập faceBook thành công";
+                return GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
             }
             else
             {
@@ -47,7 +77,10 @@ namespace autohana
                     var uid = LoginWithCookie(_dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value.ToString(), chromeDriver);
                     if (uid != null)
                     {
-                        return GetUserIdFromHome(chromeDriver);
+                        _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập faceBook thành công";
+                        var cookie = GetCookieFb(chromeDriver);
+                        _dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value = cookie;
+                        return cookie.FirstOrDefault(x => x.Name == "c_user").Value;
                     }
                 }
                 else
@@ -56,17 +89,19 @@ namespace autohana
                     var uid = LoginFbWithUidAndPass(_dgvAccounts.Rows[_rowIndex].Cells["id"].Value.ToString(), _dgvAccounts.Rows[_rowIndex].Cells["pass"].Value.ToString(), chromeDriver);
                     if (uid != null)
                     {
-                        return GetUserIdFromHome(chromeDriver);
+                        _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập faceBook thành công";
+                        var cookie = GetCookieFb(chromeDriver);
+                        _dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value = cookie;
+                        return cookie.FirstOrDefault(x => x.Name == "c_user").Value;
                     }
                 }
             }
-            //PathStatusDaGirlView(rowIndex, "Không đăng nhập được Facebook");
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập faceBook thất bại";
             return null;
         }
-
         public string LoginWithCookie(string cookies, IWebDriver chromeDriver)
         {
-            chromeDriver.Url = _urlhomeFb;
+            chromeDriver.Url = _urlhomeMFb;
             cookies = cookies.Replace(" ", "");
             foreach (string item in cookies.Split(';'))
             {
@@ -75,21 +110,26 @@ namespace autohana
                     chromeDriver.Manage().Cookies.AddCookie(new Cookie(item.Split('=')[0], item.Split('=')[1]));
                 }
             }
-            chromeDriver.Url = _urlhomeFb;
-            chromeDriver.Navigate();
-            if (chromeDriver.Url == _urlhomeFb)
+            chromeDriver.Url = _urlhomeMFb;
+            Task.Delay(1000);
+            if (chromeDriver.Url.Contains(_urlhomeMFb))
             {
-                return GetUserIdFromHome(chromeDriver);
+                return "oke";
             }
             else
             {
                 return null;
             }
         }
-
         public ReadOnlyCollection<Cookie> GetCookieFb(IWebDriver chromeDriver)
         {
             var cookie = chromeDriver.Manage().Cookies.AllCookies;
+            //Cookie listCookie = cookie.Where(x=>x.sp)
+            var str = "";
+            foreach (var item in cookie)
+            {
+                str += item.ToString().Split(';')[0] + ";";
+            }
             return cookie;
         }
         // truyên trang home fb
@@ -116,11 +156,14 @@ namespace autohana
                 chromeDriver.FindElement(By.Name("login")).Click();
                 if (chromeDriver.Url == _urlhomeFb)
                 {
-                    return GetUserIdFromHome(chromeDriver);
+                    return "oke";
                 }
             }
             return null;
         }
+        #endregion
+
+        #region Hana
         public ModelLamJob LamJob(IWebDriver chromeDriver, ref int sotiendalam, ref int solankhonggiaiduoctien)
         {
             var tienjob = "";
@@ -133,7 +176,7 @@ namespace autohana
                 var tenJob = "";
                 while (tenJob == "")
                 {
-                    tenJob = chromeDriver.FindElement(By.XPath("//span[@class='text-uppercase primary--text font-weight-bold hidden-sm-and-down title']")).Text;
+                    tenJob = chromeDriver.FindElement(By.XPath("//span[@class='text-uppercase primary--text font-weight-bold hidden-md-and-up body-2']")).Text;
                     try
                     {
                         tienjob = chromeDriver.FindElement(By.XPath("//span[@class='hold-prices']")).Text;
@@ -171,16 +214,7 @@ namespace autohana
                 {
                     Common.DelayMiliSeconde(3000);
 
-                    foreach (string window in chromeDriver.WindowHandles)
-                    {
-                        if (originalWindow != window)
-                        {
-                            chromeDriver.SwitchTo().Window(window);
-                            break;
-                        }
-                    }
-
-                    ConvertFBPhoneToWeb(chromeDriver);
+                    chromeDriver.SwitchTo().Window(chromeDriver.WindowHandles.Last());
 
                     if (!CheckPageExits(chromeDriver))
                     {
@@ -188,56 +222,54 @@ namespace autohana
                         goto PageKhongTonTai_GOTO;
                     }
 
-                    if (CheckFBCheckPoint(chromeDriver))
-                    {
-                        return (new ModelLamJob() { isCheckpoint = true });
-                    }
-
                     _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Làm Job: {tenJob}";
                     if (tenJob.ToUpper().Contains("TĂNG FOLLOW"))
                     {
-                        check = ActionFollow(chromeDriver);
+                        check = MActionFollow(chromeDriver);
                     }
                     else if (tenJob.ToUpper().Contains("TĂNG LIKE FANPAGE"))
                     {
-                        check = ActionLikePage(chromeDriver);
+                        check = MActionLikePage(chromeDriver);
                     }
                     else if (tenJob.ToUpper().Contains("TĂNG LIKE BÀI VIẾT"))
                     {
-                        check = ActionLikePost(chromeDriver);
+                        check = MActionLikePost(chromeDriver);
                     }
                     else if (tenJob.ToUpper().Contains("THƯƠNG THƯƠNG"))
                     {
-                        check = ActionCamXuc(chromeDriver, ActionFb.Care);
+                        check = MActionCamXuc(chromeDriver, ActionFb.Care);
                     }
                     else if (tenJob.ToUpper().Contains("LOVE"))
                     {
-                        check = ActionCamXuc(chromeDriver, ActionFb.Love);
+                        check = MActionCamXuc(chromeDriver, ActionFb.Love);
                     }
                     else if (tenJob.ToUpper().Contains("HA HA"))
                     {
-                        check = ActionCamXuc(chromeDriver, ActionFb.Haha);
+                        check = MActionCamXuc(chromeDriver, ActionFb.Haha);
                     }
                     else if (tenJob.ToUpper().Contains("BUỒN"))
                     {
-                        check = ActionCamXuc(chromeDriver, ActionFb.Sad);
+                        check = MActionCamXuc(chromeDriver, ActionFb.Sad);
                     }
                     else if (tenJob.ToUpper().Contains("WOW"))
                     {
-                        check = ActionCamXuc(chromeDriver, ActionFb.Wow);
+                        check = MActionCamXuc(chromeDriver, ActionFb.Wow);
                     }
                     else if (tenJob.ToUpper().Contains("GIẬN DỮ"))
                     {
-                        check = ActionCamXuc(chromeDriver, ActionFb.Angry);
+                        check = MActionCamXuc(chromeDriver, ActionFb.Angry);
                     }
                     else if (tenJob.ToUpper().Contains("ĐÁNH GIÁ FANPAGE") && noidungDanhgiaComment)
                     {
                         check = ActionDanhGia(chromeDriver);
                     }
-                    Common.DelayMiliSeconde(3000);
                     if (CheckFBBlockAction(chromeDriver))
                     {
                         return (new ModelLamJob() { isBlockaction = true });
+                    }
+                    if (CheckFBCheckPoint(chromeDriver))
+                    {
+                        return (new ModelLamJob() { isCheckpoint = true });
                     }
                 PageKhongTonTai_GOTO:
                     chromeDriver.SwitchTo().Window(originalWindow);
@@ -309,6 +341,35 @@ namespace autohana
             }
             return (new ModelLamJob() { isFinishOneJob = check });
         }
+        private void BAoCaoHoanThanhJob(IWebDriver chromeDriver)
+        {
+            try
+            {
+                IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                js.ExecuteScript("window.scrollBy(0,500)");
+                chromeDriver.FindElement(By.XPath("//span[contains(text(),'Hoàn thành')]")).Click();
+                Common.Delay(1);
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+        private void BaoJobLoi(IWebDriver chromeDriver)
+        {
+            try
+            {
+                chromeDriver.FindElements(By.XPath("//span[contains(text(),'Báo lỗi')]"))[0].Click();
+                Common.Delay(1);
+                chromeDriver.FindElement(By.XPath("//span[contains(text(), 'Gửi báo cáo ')]")).Click();
+                Common.Delay(4);
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+        #endregion
 
 
         private bool CheckPageExits(IWebDriver chromeDriver)
@@ -331,7 +392,7 @@ namespace autohana
         private bool CheckFBBlockAction(IWebDriver chromeDriver)
         {
             var pageSource = chromeDriver.PageSource;
-            if (pageSource.Contains("This action was blocked. Please try again later.") || pageSource.Contains("Thao tác này đã bị chặn. Vui lòng thử lại sau."))
+            if (pageSource.Contains("This action was blocked. Please try again later.") || pageSource.Contains("Thao tác này đã bị chặn. Vui lòng thử lại sau.") || pageSource.Contains("Tạm thời, bạn không thể làm một số việc nhất định trên Facebook."))
             {
                 return true;
             }
@@ -348,33 +409,7 @@ namespace autohana
             return;
         }
 
-        private void BAoCaoHoanThanhJob(IWebDriver chromeDriver)
-        {
-            try
-            {
-                chromeDriver.FindElement(By.XPath("//span[contains(text(),'Hoàn thành')]")).Click();
-                Common.Delay(1);
-            }
-            catch (Exception e)
-            {
-
-            }
-        }
-        private void BaoJobLoi(IWebDriver chromeDriver)
-        {
-            try
-            {
-                chromeDriver.FindElements(By.XPath("//span[contains(text(),'Báo lỗi')]"))[0].Click();
-                Common.Delay(1);
-                chromeDriver.FindElement(By.XPath("//span[contains(text(), 'Gửi báo cáo ')]")).Click();
-                Common.Delay(4);
-            }
-            catch (Exception e)
-            {
-
-            }
-        }
-
+        #region action Facebook Web window
         private bool ActionLikePage(IWebDriver chromeDriver)
         {
             ReadOnlyCollection<IWebElement> webElements;
@@ -399,7 +434,7 @@ namespace autohana
                         webElements = Common.WaitGetElement(chromeDriver, By.XPath("//button[contains(text(),'Thích')]"), 2); // cu
                         if (webElements != null)
                         {
-                            Common.ChoClickButtonFB();
+                            ChoClickButtonFB();
                             webElements[0].Click();
                             AlertLikePage(chromeDriver);
                             return true;
@@ -409,7 +444,7 @@ namespace autohana
                             webElements = Common.WaitGetElement(chromeDriver, By.XPath("//button[contains(text(),'Like')]"), 2); // TA cu
                             if (webElements != null)
                             {
-                                Common.ChoClickButtonFB();
+                                ChoClickButtonFB();
                                 webElements[0].Click();
                                 // AlertLikePage(chromeDriver); // phai viet bang tieng anh
                                 return true;
@@ -419,7 +454,7 @@ namespace autohana
                                 webElements = Common.WaitGetElement(chromeDriver, By.XPath("//div[@aria-label='Thích']"), 2); // Moi
                                 if (webElements != null)
                                 {
-                                    Common.ChoClickButtonFB();
+                                    ChoClickButtonFB();
                                     webElements[0].Click();
                                     AlertLikePage(chromeDriver);
                                     return true;
@@ -456,7 +491,7 @@ namespace autohana
                             var webElements = Common.WaitGetElement(chromeDriver, By.XPath("//a[contains(text(),'Theo dõi')]"), 2);
                             if (webElements != null)
                             {
-                                Common.ChoClickButtonFB();
+                                ChoClickButtonFB();
                                 webElements[0].Click();
                                 return true;
                             }
@@ -465,7 +500,7 @@ namespace autohana
                                 webElements = Common.WaitGetElement(chromeDriver, By.XPath("//a[contains(text(),'Follow')]"), 2);
                                 if (webElements != null)
                                 {
-                                    Common.ChoClickButtonFB();
+                                    ChoClickButtonFB();
                                     webElements[0].Click();
                                     return true;
                                 }
@@ -473,7 +508,7 @@ namespace autohana
                                 {
                                     try
                                     { // giao dien moi
-                                        Common.ChoClickButtonFB();
+                                        ChoClickButtonFB();
                                         chromeDriver.FindElement(By.XPath("//img[contains(@src, 'oABzID6cE5f.png')]")).Click();
                                         return true;
                                     }
@@ -494,9 +529,15 @@ namespace autohana
         }
         private bool ActionLikePost(IWebDriver chromeDriver)
         {
-
-            IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
-            js.ExecuteScript("window.scrollBy(0,300)");
+            try
+            {
+                IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                js.ExecuteScript("window.scrollBy(0,300)");
+            }
+            catch (Exception e)
+            {
+                GhiFile.Write("123", $"Javascrip----------- {e.ToString()}");
+            }
 
             ReadOnlyCollection<IWebElement> webElements;
             try
@@ -514,7 +555,7 @@ namespace autohana
                     webElements = Common.WaitGetElement(chromeDriver, By.XPath("//a[@aria-label='Thích' and contains(@class,'_18vj')]"), 2); // lam job cu
                     if (webElements != null)
                     {
-                        Common.ChoClickButtonFB();
+                        ChoClickButtonFB();
                         webElements[webElements.Count() - 1].Click();
                         return true;
                     }
@@ -523,7 +564,7 @@ namespace autohana
                         webElements = Common.WaitGetElement(chromeDriver, By.XPath("//a[@aria-label='Like' and contains(@class,'_18vj')]"), 2); // lam TA job cu
                         if (webElements != null)
                         {
-                            Common.ChoClickButtonFB();
+                            ChoClickButtonFB();
                             webElements[webElements.Count() - 1].Click();
                             return true;
                         }
@@ -532,7 +573,7 @@ namespace autohana
                             webElements = Common.WaitGetElement(chromeDriver, By.XPath("//span[contains(@class,'_18vi')]"), 2); // lam job mơi
                             if (webElements != null)
                             {
-                                Common.ChoClickButtonFB();
+                                ChoClickButtonFB();
                                 webElements[0].Click();
                                 return true;
                             }
@@ -544,8 +585,15 @@ namespace autohana
         }
         private bool ActionCamXuc(IWebDriver chromeDriver, ActionFb actionFb)
         {
-            IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
-            js.ExecuteScript("window.scrollBy(0,300)");
+            try
+            {
+                IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                js.ExecuteScript("window.scrollBy(0,300)");
+            }
+            catch (Exception e)
+            {
+                GhiFile.Write("123", $"Javascrip----------- {e.ToString()}");
+            }
             ReadOnlyCollection<IWebElement> webElements;
             Actions actionProvider = new Actions(chromeDriver);
             try
@@ -610,7 +658,7 @@ namespace autohana
                     }
                     try
                     {
-                        Common.ChoClickButtonFB();
+                        ChoClickButtonFB();
                         actionProvider.MoveToElement(webElements[webElements.Count() - 1]).Build().Perform();
                         Common.DelayMiliSeconde(3000);
                         switch (actionFb)
@@ -653,7 +701,7 @@ namespace autohana
                 Common.DelayMiliSeconde(1000);
                 chromeDriver.FindElement(By.XPath("//textarea[contains(@class,'composerInput')]")).SendKeys(System.Windows.Forms.Keys.Control + "v");
                 chromeDriver.FindElement(By.XPath("//button[contains(@value,'Đăng')]")).Click();
-                Common.ChoClickButtonFB();
+                ChoClickButtonFB();
                 return true;
             }
             catch (Exception)
@@ -685,7 +733,7 @@ namespace autohana
                         Common.DelayMiliSeconde(1000);
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                 }
                 Common.WaitGetElement(chromeDriver, By.XPath("//input[contains(@name,'view_post')]"), 2)[0].Click();
@@ -697,13 +745,13 @@ namespace autohana
                 _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Url bài đăng Fb là {chromeDriver.Url}";
                 return chromeDriver.Url;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Lỗi, Không thể đăng bài viết";
             }
             return null;
         }
-
+        #endregion
 
         // alert thong báo
         private void AlertLikePage(IWebDriver chromeDriver)
@@ -721,71 +769,114 @@ namespace autohana
             {
             }
         }
+
+
+        #region action Facebook Phone
         private bool MActionFollow(IWebDriver chromeDriver)
         {
-            try
-            {
-                chromeDriver.FindElement(By.XPath("//button[contains(.,'Đang theo dõi')]"));
-            }
-            catch (Exception)
+            if (!chromeDriver.PageSource.Contains("Đang theo dõi"))
             {
                 try
                 {
-                    chromeDriver.FindElement(By.XPath("//button[contains(.,'Following')]"));
+                    ChoClickButtonFB("FOLLOW");
+                    chromeDriver.FindElement(By.XPath("//a[@aria-label='Khác']")).Click();
+                    var like = chromeDriver.FindElement(By.XPath("//a[contains(@href,'subscriptions/add?')]"));
+                    like.Click();
+                    return true;
                 }
                 catch (Exception)
                 {
-                    try
-                    {// giao dien moi
-                        chromeDriver.FindElement(By.XPath("//div[@aria-label='Bỏ theo dõi']"));
-                    }
-                    catch (Exception)
-                    {
-                        try
-                        {
-                            var webElements = Common.WaitGetElement(chromeDriver, By.XPath("//a[contains(text(),'Theo dõi')]"), 2);
-                            if (webElements != null)
-                            {
-                                Common.ChoClickButtonFB();
-                                webElements[0].Click();
-                                return true;
-                            }
-                            else
-                            {
-                                webElements = Common.WaitGetElement(chromeDriver, By.XPath("//a[contains(text(),'Follow')]"), 2);
-                                if (webElements != null)
-                                {
-                                    Common.ChoClickButtonFB();
-                                    webElements[0].Click();
-                                    return true;
-                                }
-                                else
-                                {
-                                    try
-                                    { // giao dien moi
-                                        Common.ChoClickButtonFB();
-                                        chromeDriver.FindElement(By.XPath("//img[@src = 'https://static.xx.fbcdn.net/rsrc.php/v3/yz/r/JonZjQBHWuh.png']")).Click();
-                                        return true;
-                                    }
-                                    catch (Exception)
-                                    {
-                                    }
-                                }
-
-                            }
-                        }
-                        catch (Exception)
-                        {
-                        }
-                    }
                 }
             }
             return false;
+            // báo lỗi
         }
-        //button[contains(@value,'Có')]
-        //textarea[contains(@class,'composerInput')]
-        // pave gia trị
-        //button[contains(@value,'Đăng')]
+        private bool MActionLikePage(IWebDriver chromeDriver)
+        {
+            try
+            {
+                var lopNgoai = chromeDriver.FindElement(By.XPath("//div[contains(@class,'_a58 _a5t _9_7 _2rgt _1j-f _2rgt')]")); // là Lớp bao ngoài
+                try
+                {
+                    lopNgoai.FindElement(By.XPath("//div[contains(@class,'_5u9t')]")).FindElement(By.XPath("//*[.='Đã thích']"));
+                    // câu trên có nghĩa là trang đó chưa thích
+                    var like = lopNgoai.FindElement(By.XPath("//*[.='Thích']"));
+                    ChoClickButtonFB("LIKE PAGE");
+                    like.Click();
+                    return true;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return false;
+        }
+        private bool MActionLikePost(IWebDriver chromeDriver)
+        {
+
+            try
+            {
+                IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                js.ExecuteScript("window.scrollBy(0,400)");
+                var like = chromeDriver.FindElement(By.XPath("//a[@class='_15ko _77li touchable']"));
+                ChoClickButtonFB("LIKE POST");
+                like.Click();
+                return true;
+            }
+            catch (Exception)
+            {
+            }
+            return false;
+            // báo lỗi
+        }
+        private bool MActionCamXuc(IWebDriver chromeDriver, ActionFb actionFb)
+        {
+            chromeDriver.Url = chromeDriver.Url.Replace("/m.", "/mbasic.");
+            Common.DelayMiliSeconde(3000);
+            try
+            {
+                IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                js.ExecuteScript("window.scrollBy(0,200)");
+                var like = chromeDriver.FindElement(By.XPath("//img[contains(@src,'kq4YlzJKoP0.png')]"));
+                ChoClickButtonFB("CẢM XÚC");
+                like.Click();
+                Common.DelayMiliSeconde(1000);
+                switch (actionFb)
+                {
+                    case ActionFb.Angry:
+                        chromeDriver.FindElement(By.XPath("//span[text()='Phẫn nộ']")).Click();
+                        break;
+                    case ActionFb.Haha:
+                        chromeDriver.FindElement(By.XPath("//span[text()='Haha']")).Click();
+                        break;
+                    case ActionFb.Love:
+                        chromeDriver.FindElement(By.XPath("//span[text()='Yêu thích']")).Click();
+                        break;
+                    case ActionFb.Care:
+                        chromeDriver.FindElement(By.XPath("//span[text()='Thương thương']")).Click();
+                        break;
+                    case ActionFb.Wow:
+                        chromeDriver.FindElement(By.XPath("//span[text()='Wow']")).Click();
+                        break;
+                    case ActionFb.Sad:
+                        chromeDriver.FindElement(By.XPath("//span[text()='Buồn']")).Click();
+                        break;
+                    default:
+                        return false;
+                }
+                return true;
+            }
+            catch (Exception)
+            {
+            }
+            return false;
+            // báo lỗi
+        }
+        #endregion
 
 
         private void Nuoi_NhanKetBan(IWebDriver chromeDriver)
@@ -806,7 +897,6 @@ namespace autohana
             {
             }
         }
-
         private void Nuoi_GuiKetBan(IWebDriver chromeDriver)
         {
             ReadOnlyCollection<IWebElement> webElements;
@@ -827,13 +917,159 @@ namespace autohana
         }
 
 
-        //private void PatchInnerHTMLForXpatchJS(IWebDriver chromeDriver, string path, string innerhtml)
-        //{
-        //    IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
-        //    js.ExecuteScript("function getElementByXpath(path) {return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;}");
 
-        //    var b = "document.getElementByXpath(\"//span[contains(@data-offset-key,'603lv-0-0')]\").innerHTML='" + innerhtml + "';";
-        //    js.ExecuteScript("getElementByXpath(\"//br[@data-text='true']\").innerHTML='" + innerhtml + "';");
-        //}
+        #region backUp Facebook
+        public void BackUpFacebook(IWebDriver chromeDriver)
+        {
+            var uidFb = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
+            BackupThongTinCoBan(chromeDriver, uidFb);
+            BackUpAnhBanBe(chromeDriver, uidFb);
+            BackUpBaoMat(chromeDriver, uidFb);
+        }
+        private bool BackupThongTinCoBan(IWebDriver chromeDriver, string uidFb)
+        {
+            try
+            {
+                chromeDriver.Url = UrlProfileMFa(uidFb);
+                chromeDriver.Url = UrlInfomationMFa(chromeDriver.Url.Replace("?_rdr", ""), uidFb);
+                var listContent = chromeDriver.FindElements(By.XPath("//div[@class='_55wo _2xfb _1kk1']"));
+                var str = "";
+                for (int i = 0; i < 10; i++)
+                {
+                    str += listContent[i].Text + "</br></br>";
+                    var a = listContent[i].Text;
+                }
+                str = str.Replace("\r\n", "</br>");
+                GhiFile.GhiFileBackUpFromString(uidFb, str, "information", TypeFile.Html);
+                return true;
+            }
+            catch (Exception)
+            {
+            }
+            return false;
+        }
+
+        // vào trang danh sách bạn bè, tìm các tài khoản chưa backup 
+        // trả về danh sách UID chưa được backup
+        // mặc định nếu file listfriend.txt không có dữ liệu thì backup hết, nếu file có dữ liệu thì backUp những bạn mới
+        private List<string> BackUpAnhBanBe(IWebDriver chromeDriver, string uidFb)
+        {
+            Thread.Sleep(1);
+            try
+            {
+                // Đọc file listfriend trong máy, tìm tới khi hết những người chưa backup
+                var listUidBackuped = GhiFile.DocFileDSUid($"BackUp/{uidFb}/listfriend.txt");
+                // trả về danh sách uid đã backup
+                if (_chiBackupnguoimoi)
+                {
+                    chromeDriver.Url = UrlFriendNewListMfa(uidFb);
+                }
+                else
+                {
+                    chromeDriver.Url = UrlProfileMFa(uidFb);
+                    chromeDriver.Url = UrlFrienfListMFa(chromeDriver.Url.Replace("?_rdr", ""), uidFb);
+                }
+                while (chromeDriver.PageSource.Contains("id=\"m_more_friends\" data-sigil=\"marea\""))
+                {
+                    ((IJavaScriptExecutor)chromeDriver).ExecuteScript("window.scrollTo(0, document.body.scrollHeight)");
+                    Common.DelayMiliSeconde(1000);
+                }
+                var listIdElement = chromeDriver.FindElements(By.XPath("//div[@class='_5d0x right']"));
+                // Tìm những Uid chưa BackUp
+                var listUid = new List<string>();
+                foreach (var item in listIdElement)
+                {
+                    var dataStore = item.GetAttribute("data-store").ToString();
+                    var uid = JsonConvert.DeserializeObject<ModelFriendFb>(dataStore);
+                    if (!listUidBackuped.Contains(uid.id))
+                    {
+                        listUid.Add(uid.id);
+                    }
+                }
+                var listUidNewBachUp = new List<string>();
+                foreach (var uidFriendNew in listUid)
+                {
+                    if (!BackUpImageOneFriend(chromeDriver, uidFb, uidFriendNew))  // tạo file backup Ảnh user đó nếu trả về false thì bị lỗi haowcj fb chặn spam
+                    {
+                        break;
+                    }
+                    listUidNewBachUp.Add(uidFriendNew);
+                }
+                // dảo ngược danh sach Uid sắp xếp theo từ mới tới cũ
+                listUidBackuped.Reverse();
+                listUidNewBachUp.Reverse();
+                listUidBackuped.AddRange(listUidNewBachUp);
+                listUidBackuped.Reverse();
+                GhiFile.GhiFileBackUpListUid($"BackUp/{uidFb}", "listfriend", TypeFile.Txt, listUidBackuped); // ghi đè uid chưua backup vào file
+                GhiFile.GhiFileHTMLMoCheckPoint($"BackUp/{uidFb}/anhbanbe.html", uidFb, listUidNewBachUp);
+                return listUidNewBachUp;
+            }
+            catch (Exception e)
+            {
+            }
+            return null;
+        }
+        private bool BackUpImageOneFriend(IWebDriver chromeDriver, string uidProfile, string uidOneFriend)
+        {
+            try
+            {
+                chromeDriver.Url = UrlAlbulmImageMFa(uidOneFriend);
+                var tenBanBe = chromeDriver.FindElement(By.XPath("//a[@data-sigil='MBackNavBarClick']")).Text;
+                var listAlbumEles = chromeDriver.FindElements(By.XPath("//div[@class='item _50lb tall acw abb']"));
+                var listLinkImg = new List<string>();
+                for (int i = 0; i < listAlbumEles.Count() && i < 2; i++)
+                {
+                    Thread.Sleep(5000);
+                    chromeDriver.FindElements(By.XPath("//div[@class='item _50lb tall acw abb']"))[i].Click();
+                    Thread.Sleep(5000);
+                    listLinkImg.AddRange(chromeDriver.FindElements(By.XPath("//img[@class='_8brl']")).Where((x, index) => index < 7).Select(x => x.GetAttribute("src")).ToList());
+                    if (i < listAlbumEles.Count() && i < 2 - 1)
+                    {
+                        chromeDriver.Navigate().Back();
+                    }
+                }
+                if (chromeDriver.PageSource.Contains("Để bảo vệ cộng đồng khỏi spam, chúng tôi giới hạn tần suất bạn đăng bài, bình luận hoặc làm các việc khác trong khoảng thời gian nhất định."))
+                {
+                    return false;
+                }
+                GhiFile.GhiFileBackUpListImageFriends($"BackUp/{uidProfile}/anhbanbe", $"{DateTime.UtcNow.ToString("dd-MM-yyyy")}_{uidOneFriend}_{tenBanBe}", TypeFile.Txt, listLinkImg);
+                return true;
+            }
+            catch (Exception e)
+            {
+            }
+            return false;
+        }
+
+
+        private bool BackUpBaoMat(IWebDriver chromeDriver, string uidFb)
+        {
+            //chromeDriver.Url = UrlInfomationMFa("", "100027294830101");
+            return true;
+        }
+        #endregion
+
+        public void ChoClickButtonFB(string nameJob = "thao tác")
+        {
+            var randomTime = (new Random()).Next(_delayFrom, _delayTo);
+            while (randomTime > 0)
+            {
+                _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Click {nameJob} sau {randomTime} giây";
+                Thread.Sleep(1000);
+                randomTime--;
+            }
+        }
+
+        public void ChangeValueWithForm(int delayFrom, int delayTo, bool chiBackupnguoimoi)
+        {
+            _delayFrom = delayFrom;
+            _delayTo = delayTo;
+            _chiBackupnguoimoi = chiBackupnguoimoi;
+        }
+    }
+
+    public class ModelFriendFb
+    {
+        public string id { get; set; }
     }
 }
