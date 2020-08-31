@@ -71,9 +71,7 @@
             this.Stop = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Action = new System.Windows.Forms.DataGridViewButtonColumn();
-            this.DKhana = new System.Windows.Forms.DataGridViewButtonColumn();
             this.UserAgent = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.Backup = new System.Windows.Forms.DataGridViewButtonColumn();
             ((System.ComponentModel.ISupportInitialize)(this.delayFrom)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.delayTo)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.JobMaxOfDay)).BeginInit();
@@ -200,6 +198,7 @@
             // 
             // dgvAccounts
             // 
+            this.dgvAccounts.AllowUserToAddRows = false;
             this.dgvAccounts.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvAccounts.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.stt,
@@ -222,14 +221,13 @@
             this.Stop,
             this.status,
             this.Action,
-            this.DKhana,
-            this.UserAgent,
-            this.Backup});
+            this.UserAgent});
             this.dgvAccounts.Location = new System.Drawing.Point(12, 119);
             this.dgvAccounts.Name = "dgvAccounts";
-            this.dgvAccounts.Size = new System.Drawing.Size(1367, 543);
+            this.dgvAccounts.Size = new System.Drawing.Size(1301, 543);
             this.dgvAccounts.TabIndex = 29;
             this.dgvAccounts.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
+            this.dgvAccounts.MouseClick += new System.Windows.Forms.MouseEventHandler(this.dgvAccounts_MouseClick);
             // 
             // checkLoadImage
             // 
@@ -486,16 +484,6 @@
             this.Action.Resizable = System.Windows.Forms.DataGridViewTriState.True;
             this.Action.Width = 60;
             // 
-            // DKhana
-            // 
-            this.DKhana.DataPropertyName = "DKhana";
-            this.DKhana.FillWeight = 50F;
-            this.DKhana.Frozen = true;
-            this.DKhana.HeaderText = "DKhana";
-            this.DKhana.Name = "DKhana";
-            this.DKhana.Visible = false;
-            this.DKhana.Width = 50;
-            // 
             // UserAgent
             // 
             this.UserAgent.DataPropertyName = "UserAgent";
@@ -506,20 +494,9 @@
             this.UserAgent.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
             this.UserAgent.Visible = false;
             // 
-            // Backup
-            // 
-            this.Backup.DataPropertyName = "BackUp";
-            this.Backup.FillWeight = 50F;
-            this.Backup.Frozen = true;
-            this.Backup.HeaderText = "Backup";
-            this.Backup.Name = "Backup";
-            this.Backup.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.Backup.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.Backup.Width = 60;
-            // 
             // Auto
             // 
-            this.ClientSize = new System.Drawing.Size(1391, 688);
+            this.ClientSize = new System.Drawing.Size(1313, 688);
             this.Controls.Add(this.isCheckBackUpFriendNew);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.clean);
@@ -528,7 +505,6 @@
             this.Controls.Add(this.uidAddHana);
             this.Controls.Add(this.ConvertData);
             this.Controls.Add(this.checkLoadImage);
-            this.Controls.Add(this.dgvAccounts);
             this.Controls.Add(this.soLanKhongGiaiDuoctien);
             this.Controls.Add(this.sotiennhan);
             this.Controls.Add(this.socapgiaikhongthanh);
@@ -539,6 +515,7 @@
             this.Controls.Add(this.delayTo);
             this.Controls.Add(this.delayFrom);
             this.Controls.Add(this.delayNewfeed);
+            this.Controls.Add(this.dgvAccounts);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Auto";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -594,9 +571,7 @@
         private System.Windows.Forms.DataGridViewCheckBoxColumn Stop;
         private System.Windows.Forms.DataGridViewTextBoxColumn status;
         private System.Windows.Forms.DataGridViewButtonColumn Action;
-        private System.Windows.Forms.DataGridViewButtonColumn DKhana;
         private System.Windows.Forms.DataGridViewTextBoxColumn UserAgent;
-        private System.Windows.Forms.DataGridViewButtonColumn Backup;
     }
 }
 

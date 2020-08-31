@@ -6,6 +6,7 @@ using OpenQA.Selenium.Support.UI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -27,6 +28,10 @@ namespace autohana
         private static int _delayFrom;
         private static int _delayTo;
         private static bool _chiBackupnguoimoi = true;
+        public int _timeDelayAddFriendFrom = 3;
+        public int _timeDelayAddFriendTo = 10;
+        public int _timeDelayBackupFrom = 6;
+        public int _timeDelayBackupTo = 30;
 
         public FaceBook(DataGridView dgvAccounts, int rowIndex)
         {
@@ -923,11 +928,13 @@ namespace autohana
         {
             var uidFb = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
             BackupThongTinCoBan(chromeDriver, uidFb);
+            GhiFile.CreadFolder($"BackUp/{uidFb}/anhbanbe");
             BackUpAnhBanBe(chromeDriver, uidFb);
             BackUpBaoMat(chromeDriver, uidFb);
         }
         private bool BackupThongTinCoBan(IWebDriver chromeDriver, string uidFb)
         {
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"BackUp thông tin cơ bản";
             try
             {
                 chromeDriver.Url = UrlProfileMFa(uidFb);
@@ -955,6 +962,7 @@ namespace autohana
         private List<string> BackUpAnhBanBe(IWebDriver chromeDriver, string uidFb)
         {
             Thread.Sleep(1);
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"BackUp ảnh bạn bè";
             try
             {
                 // Đọc file listfriend trong máy, tìm tới khi hết những người chưa backup
@@ -986,23 +994,30 @@ namespace autohana
                         listUid.Add(uid.id);
                     }
                 }
-                var listUidNewBachUp = new List<string>();
+                var listUidNewBackUp = new List<string>();
+                var dem = 0;
                 foreach (var uidFriendNew in listUid)
                 {
                     if (!BackUpImageOneFriend(chromeDriver, uidFb, uidFriendNew))  // tạo file backup Ảnh user đó nếu trả về false thì bị lỗi haowcj fb chặn spam
                     {
                         break;
                     }
-                    listUidNewBachUp.Add(uidFriendNew);
+                    listUidNewBackUp.Add(uidFriendNew);
+                    dem++;
+                    if (listUidNewBackUp.Count() % 5 == 0 || listUid.Count() == dem)
+                    {
+                        // dảo ngược danh sach Uid sắp xếp theo từ mới tới cũ
+                        listUidBackuped.Reverse();
+                        listUidNewBackUp.Reverse();
+                        listUidBackuped.AddRange(listUidNewBackUp);
+                        listUidBackuped.Reverse();
+                        GhiFile.GhiFileBackUpListUid($"BackUp/{uidFb}", "listfriend", TypeFile.Txt, listUidBackuped); // ghi đè uid chưua backup vào file
+                        GhiFile.GhiFileHTMLMoCheckPoint($"BackUp/{uidFb}/anhbanbe.html", uidFb, listUidNewBackUp);
+                        listUidNewBackUp = new List<string>(); // ghi 5 bản ghi rồi reset về 0
+                        _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"BackUp hoàn thành {dem}/{listUid.Count()}";
+                    }
                 }
-                // dảo ngược danh sach Uid sắp xếp theo từ mới tới cũ
-                listUidBackuped.Reverse();
-                listUidNewBachUp.Reverse();
-                listUidBackuped.AddRange(listUidNewBachUp);
-                listUidBackuped.Reverse();
-                GhiFile.GhiFileBackUpListUid($"BackUp/{uidFb}", "listfriend", TypeFile.Txt, listUidBackuped); // ghi đè uid chưua backup vào file
-                GhiFile.GhiFileHTMLMoCheckPoint($"BackUp/{uidFb}/anhbanbe.html", uidFb, listUidNewBachUp);
-                return listUidNewBachUp;
+                return listUidNewBackUp;
             }
             catch (Exception e)
             {
@@ -1019,9 +1034,10 @@ namespace autohana
                 var listLinkImg = new List<string>();
                 for (int i = 0; i < listAlbumEles.Count() && i < 2; i++)
                 {
-                    Thread.Sleep(5000);
+                    Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
                     chromeDriver.FindElements(By.XPath("//div[@class='item _50lb tall acw abb']"))[i].Click();
-                    Thread.Sleep(5000);
+
+                    Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
                     listLinkImg.AddRange(chromeDriver.FindElements(By.XPath("//img[@class='_8brl']")).Where((x, index) => index < 7).Select(x => x.GetAttribute("src")).ToList());
                     if (i < listAlbumEles.Count() && i < 2 - 1)
                     {
@@ -1032,6 +1048,15 @@ namespace autohana
                 {
                     return false;
                 }
+                // xoá file ảnh đã backup bị trùng
+                var listfileDaBackUp = Directory.GetFiles($"BackUp/{uidProfile}/anhbanbe");
+                var listfileBackUptrung = listfileDaBackUp.Where(x => x.Contains(uidOneFriend)).ToList();
+                foreach (var item in listfileBackUptrung)
+                {
+                    File.Delete(item);
+                }
+                // end
+
                 GhiFile.GhiFileBackUpListImageFriends($"BackUp/{uidProfile}/anhbanbe", $"{DateTime.UtcNow.ToString("dd-MM-yyyy")}_{uidOneFriend}_{tenBanBe}", TypeFile.Txt, listLinkImg);
                 return true;
             }
@@ -1041,10 +1066,26 @@ namespace autohana
             return false;
         }
 
-
         private bool BackUpBaoMat(IWebDriver chromeDriver, string uidFb)
         {
-            //chromeDriver.Url = UrlInfomationMFa("", "100027294830101");
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"BackUp bảo mật";
+            chromeDriver.Url = "https://m.facebook.com/ntdelegatescreen/?params=%7B%22entry-point%22%3A%22settings%22%7D&path=%2Fcontacts%2Fmanagement%2F";
+            var list = chromeDriver.FindElements(By.XPath("//div[@style='flex-grow:0;flex-shrink:1;padding:4px 0 4px 12px']"));
+            var str = "<p2><b>QUẢN LÝ THÔNG TIN LIÊN HỆ</b></p2></br></br>\n";
+            foreach (var item in list)
+            {
+                str += $"{item.Text} </br>\n";
+            }
+            str += "</br></br></br><p2><b>BẢO MẬT VÀ ĐĂNG NHẬP</b></p2></br></br>\n";
+            chromeDriver.Url = "https://m.facebook.com/settings/security_login/sessions/";
+            list = chromeDriver.FindElements(By.XPath("//div[@class='_4n7b c']"));
+            foreach (var item in list)
+            {
+                str += $"{item.Text} </br>\n";
+            }
+            GhiFile.GhiFileBackUpFromString(uidFb, str, "security", TypeFile.Html);
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Hoàn thất BackUp";
+            chromeDriver.Quit();
             return true;
         }
         #endregion

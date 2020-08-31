@@ -33,7 +33,6 @@ namespace autohana
         public static int _JobMaxOfDay = 0;
         public bool _chiBackupnguoimoi1 = true;
 
-
         public Auto()
         {
             InitializeComponent();
@@ -102,9 +101,10 @@ namespace autohana
                     chromeDriver[rowIndex] = new ChromeDriver(chromeDriverService, chromeOptions);
                     chromeDriver[rowIndex].Manage().Window.Size = new Size(400, 850);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Trình duyệt cùng profile đang bật, hãy tắt đi chạy lại";
+                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "2222" + e.ToString();
                     dgvAccounts.Rows[rowIndex].Cells["Action"].Value = "Bắt đầu";
                     return false;
                 }
@@ -141,6 +141,7 @@ namespace autohana
             this.soLanKhongGiaiDuoctien.Invoke(new Action(() => UpdateSolankhonggiaiduoctien(_solanKhonggiaiduocTien)));
         }
 
+        #region funtion vowis dataGirdView
         private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
             var senderGrid = (DataGridView)sender;
@@ -157,32 +158,6 @@ namespace autohana
                     {
                         // xử lý code
                         this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Bắt đầu";
-                    }
-                }
-                if (e.ColumnIndex == 20)
-                {
-                    if (this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value.ToString() == "Đăng kí")
-                    {
-                        ChayDangKiHana(e.RowIndex);
-                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Kết thúc";
-                    }
-                    else
-                    {
-                        // xử lý code
-                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Đăng kí";
-                    }
-                }
-                if (e.ColumnIndex == 22) // backup checkpoint
-                {
-                    if (this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value.ToString() == "BackUp")
-                    {
-                        BackUpFacebook(e.RowIndex);
-                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Huỷ";
-                    }
-                    else
-                    {
-                        // xử lý code
-                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "BackUp";
                     }
                 }
             }
@@ -203,6 +178,56 @@ namespace autohana
                 }
             }
         }
+        private void dgvAccounts_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                ContextMenuStrip menu_dgv = new ContextMenuStrip();
+                int positionClick = this.dgvAccounts.HitTest(e.X, e.Y).RowIndex;
+                if (positionClick >= 0)
+                {
+                    menu_dgv.Items.Add("BackUp").Name = "BackUp";
+                    menu_dgv.Items.Add("Mở file BackUp").Name = "Mở file BackUp";
+                    menu_dgv.Items.Add("Đăng kí Hana").Name = "Đăng kí Hana";
+                    menu_dgv.Items.Add("Delete").Name = "Delete";
+                }
+                menu_dgv.Show(dgvAccounts, new Point(e.X, e.Y));
+                if (dgvAccounts.SelectedRows.Count == 1)
+                {
+                    dgvAccounts.ClearSelection();
+                }
+                dgvAccounts.Rows[positionClick].Selected = true;
+                menu_dgv.ItemClicked += new ToolStripItemClickedEventHandler(my_menu_ItemChicked);
+            }
+        }
+        private void my_menu_ItemChicked(object sender, ToolStripItemClickedEventArgs e)
+        {
+            foreach (DataGridViewRow row in dgvAccounts.SelectedRows)
+            {
+                switch (e.ClickedItem.Name.ToString())
+                {
+                    case "BackUp":
+                        BackUpFacebook(row.Index);
+                        break;
+                    case "Mở file BackUp":
+                        OpenFileBackUp(dgvAccounts.Rows[row.Index].Cells["id"].Value.ToString());
+                        break;
+                    case "Đăng kí Hana":
+                        ChayDangKiHana(row.Index);
+                        break;
+                    case "Delete":
+                        dgvAccounts.Rows.Remove(row);
+                        break;
+                }
+            }
+        }
+        private void OpenFileBackUp(string uid)
+        {
+            Process.Start("explorer", $"{Environment.CurrentDirectory}\\BackUp\\{uid}");
+        }
+        #endregion
+
+
 
         private void ChayJobHana(int rowIndex)
         {
@@ -484,6 +509,7 @@ namespace autohana
             t.Start();
         }
         #endregion
+
     }
 
 

@@ -115,6 +115,13 @@ namespace autohana
             return File.ReadAllLines($"{urlFile}").ToList();
         }
 
+        public static void CreadFolder(string pathFolder)
+        {
+            if (!Directory.Exists($"{pathFolder}"))
+            {
+                Directory.CreateDirectory($"{pathFolder}");
+            }
+        }
 
         private static string TemplateBackUp(string name = "", string Uid = "")
         {
@@ -203,6 +210,7 @@ namespace autohana
             str += "noidungtiep\n";
             return str;
         }
+
     }
 
     public class UidAndName

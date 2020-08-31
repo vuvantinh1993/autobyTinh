@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -10,9 +11,9 @@ namespace autohana
 {
     public static class XLFile
     {
-        public static List<ModelAccount> DocFileTaiKhoan(string url)
+        public static BindingList<ModelAccount> DocFileTaiKhoan(string url)
         {
-            var listAcc = new List<ModelAccount>();
+            var listAcc = new BindingList<ModelAccount>();
             var urlUserAgent = "config/userAgent.txt";
             if (!Directory.Exists("config"))
             {
