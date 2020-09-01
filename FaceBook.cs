@@ -1067,7 +1067,9 @@ namespace autohana
         private bool BackUpBaoMat(IWebDriver chromeDriver, string uidFb)
         {
             _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"BackUp bảo mật";
-            chromeDriver.Url = "https://m.facebook.com/ntdelegatescreen/?params=%7B%22entry-point%22%3A%22settings%22%7D&path=%2Fcontacts%2Fmanagement%2F";
+
+            var a = "https://m.facebook.com/ntdelegatescreen/?params=%7B%22entry-point%22%3A%22settings%22%7D&path=%2Fcontacts%2Fmanagement%2F";
+            chromeDriver.Url = a;
             var list = chromeDriver.FindElements(By.XPath("//div[@style='flex-grow:0;flex-shrink:1;padding:4px 0 4px 12px']"));
             var str = "<p2><b>QUẢN LÝ THÔNG TIN LIÊN HỆ</b></p2></br></br>\n";
             foreach (var item in list)
