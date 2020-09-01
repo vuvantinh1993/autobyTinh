@@ -40,9 +40,9 @@ namespace autohana
         }
 
         #region trả về 1 số url Facebook
-        private string UrlInfomationMFa(string urlProfile, string Uid)
+        private string UrlInfomationMFa(string Uid)
         {
-            return $"{urlProfile}/about?lst={Uid}%3A{Uid}%3A1598723261";
+            return $"https://m.facebook.com/profile.php?v=info&lst={Uid}%3A{Uid}%3A1598986297";
         }
         private string UrlFrienfListMFa(string Uid)
         {
@@ -70,7 +70,7 @@ namespace autohana
             _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đi đăng nhập Facebook";
             chromeDriver.Url = _urlLogin;
             Task.Delay(1000);
-            if (chromeDriver.Url.Contains(_urlhomeMFb))
+            if (GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user") != null)
             {
                 _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập faceBook thành công";
                 return GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
@@ -84,9 +84,7 @@ namespace autohana
                     if (uid != null)
                     {
                         _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập faceBook thành công";
-                        var cookie = GetCookieFb(chromeDriver);
-                        _dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value = cookie;
-                        return cookie.FirstOrDefault(x => x.Name == "c_user").Value;
+                        return GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
                     }
                 }
                 else
@@ -97,7 +95,7 @@ namespace autohana
                     {
                         _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập faceBook thành công";
                         var cookie = GetCookieFb(chromeDriver);
-                        _dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value = cookie;
+                        _dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value = cookie.ToString();
                         return cookie.FirstOrDefault(x => x.Name == "c_user").Value;
                     }
                 }
@@ -118,9 +116,10 @@ namespace autohana
             }
             chromeDriver.Url = _urlhomeMFb;
             Task.Delay(1000);
-            if (chromeDriver.Url.Contains(_urlhomeMFb))
+            var cookieUid = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user");
+            if (cookieUid != null)
             {
-                return "oke";
+                return cookieUid.Value;
             }
             else
             {
@@ -938,8 +937,7 @@ namespace autohana
             _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"BackUp thông tin cơ bản";
             try
             {
-                chromeDriver.Url = UrlProfileMFa(uidFb);
-                chromeDriver.Url = UrlInfomationMFa(chromeDriver.Url.Replace("?_rdr", ""), uidFb);
+                chromeDriver.Url = UrlInfomationMFa(uidFb);
                 var listContent = chromeDriver.FindElements(By.XPath("//div[@class='_55wo _2xfb _1kk1']"));
                 var str = "";
                 for (int i = 0; i < 10; i++)
