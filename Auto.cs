@@ -103,8 +103,8 @@ namespace autohana
                 }
                 catch (Exception e)
                 {
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Trình duyệt cùng profile đang bật, hãy tắt đi chạy lại";
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "2222" + e.ToString();
+                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Hãy update chromedrive mới, hoặc trình duyệt cùng profile đang bật tắt nó đi";
+                    //dgvAccounts.Rows[rowIndex].Cells["status"].Value = "2222" + e.ToString();
                     dgvAccounts.Rows[rowIndex].Cells["Action"].Value = "Bắt đầu";
                     return false;
                 }

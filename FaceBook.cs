@@ -44,9 +44,10 @@ namespace autohana
         {
             return $"{urlProfile}/about?lst={Uid}%3A{Uid}%3A1598723261";
         }
-        private string UrlFrienfListMFa(string urlProfile, string Uid)
+        private string UrlFrienfListMFa(string Uid)
         {
-            return $"{urlProfile}/friends?lst={Uid}%3A{Uid}%3A1598723261";
+            return $"https://m.facebook.com/profile.php?v=friends&lst={Uid}%3A{Uid}%3A1598977239";
+            //return $"{urlProfile}/friends?lst={Uid}%3A{Uid}%3A1598723261";
         }
         private string UrlFriendNewListMfa(string UidProfile)
         {
@@ -974,8 +975,7 @@ namespace autohana
                 }
                 else
                 {
-                    chromeDriver.Url = UrlProfileMFa(uidFb);
-                    chromeDriver.Url = UrlFrienfListMFa(chromeDriver.Url.Replace("?_rdr", ""), uidFb);
+                    chromeDriver.Url = UrlFrienfListMFa(uidFb);
                 }
                 while (chromeDriver.PageSource.Contains("id=\"m_more_friends\" data-sigil=\"marea\""))
                 {
