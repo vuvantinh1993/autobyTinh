@@ -77,7 +77,7 @@ namespace autohana
             }
             else
             {
-                if (_dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value.ToString() != null)
+                if (_dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value != null)
                 {
                     _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = "Đăng nhập Fb bằng cookie";
                     var uid = LoginWithCookie(_dgvAccounts.Rows[_rowIndex].Cells["cookie"].Value.ToString(), chromeDriver);
@@ -775,7 +775,6 @@ namespace autohana
             }
         }
 
-
         #region action Facebook Phone
         private bool MActionFollow(IWebDriver chromeDriver)
         {
@@ -924,10 +923,17 @@ namespace autohana
 
 
         #region backUp Facebook
-        public void BackUpFacebook(IWebDriver chromeDriver)
+        public void BackUpFacebookAll(IWebDriver chromeDriver)
         {
             var uidFb = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
             BackupThongTinCoBan(chromeDriver, uidFb);
+            GhiFile.CreadFolder($"BackUp/{uidFb}/anhbanbe");
+            BackUpAnhBanBe(chromeDriver, uidFb);
+            BackUpBaoMat(chromeDriver, uidFb);
+        }
+        public void BackUpFacebookOnlyImageFriend(IWebDriver chromeDriver)
+        {
+            var uidFb = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
             GhiFile.CreadFolder($"BackUp/{uidFb}/anhbanbe");
             BackUpAnhBanBe(chromeDriver, uidFb);
             BackUpBaoMat(chromeDriver, uidFb);
@@ -1042,7 +1048,7 @@ namespace autohana
                         chromeDriver.Navigate().Back();
                     }
                 }
-                if (chromeDriver.PageSource.Contains("Để bảo vệ cộng đồng khỏi spam, chúng tôi giới hạn tần suất bạn đăng bài, bình luận hoặc làm các việc khác trong khoảng thời gian nhất định."))
+                if (chromeDriver.PageSource.Contains("Để bảo vệ cộng đồng khỏi spam, chúng tôi giới hạn tần suất bạn đăng bài, bình luận hoặc làm các việc khác trong khoảng thời gian nhất định.") || chromeDriver.Url.Contains("checkpoint"))
                 {
                     return false;
                 }
@@ -1083,12 +1089,78 @@ namespace autohana
             {
                 str += $"{item.Text} </br>\n";
             }
-            GhiFile.GhiFileBackUpFromString(uidFb, str, "security", TypeFile.Html);
-            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Hoàn thất BackUp";
+            if (str.Length > 50)
+            {
+                GhiFile.GhiFileBackUpFromString(uidFb, str, "security", TypeFile.Html);
+                _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Hoàn thất BackUp";
+            }
             chromeDriver.Quit();
             return true;
         }
         #endregion
+
+
+        #region quét thành viên group
+        public bool QuetThanhVienGroup(IWebDriver chromeDriver)
+        {
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Đi quét group";
+            try
+            {
+                chromeDriver.Url = "https://www.facebook.com/groups/j2team.community/members/";
+
+                for (int i = 0; i < 500; i++)
+                {
+                    IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                    js.ExecuteScript("window.scrollBy(0,800)");
+                    Thread.Sleep(500);
+                }
+
+                var listContent = chromeDriver.FindElements(By.XPath("//div[contains(@id,'recently_joined_')]"));
+                var listUid = new List<string>();
+                foreach (var item in listContent)
+                {
+                    var uid = item.GetAttribute("id").Replace("recently_joined_", "");
+                    listUid.Add(uid);
+                }
+                File.WriteAllLines("tinh.txt", listUid);
+                return true;
+            }
+            catch (Exception)
+            {
+            }
+            return false;
+        }
+        public bool LocNguoiDung(IWebDriver chromeDriver)
+        {
+            _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Locj th";
+            try
+            {
+                chromeDriver.Url = "https://www.facebook.com/100003915540430";
+                for (int i = 0; i < 5; i++)
+                {
+                    IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                    js.ExecuteScript("window.scrollBy(0,800)");
+                    Thread.Sleep(500);
+                }
+                var listContent = chromeDriver.FindElements(By.XPath("//div[contains(@aria-label,'đã bày tỏ cảm xúc')]"));
+                var tong = 0;
+                if (listContent.Count() > 5)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        tong += Convert.ToInt32(listContent[i].Text);
+                    }
+                }
+                var trungbinh = tong / 5;
+                return true;
+            }
+            catch (Exception)
+            {
+            }
+            return false;
+        }
+        #endregion
+
 
         public void ChoClickButtonFB(string nameJob = "thao tác")
         {

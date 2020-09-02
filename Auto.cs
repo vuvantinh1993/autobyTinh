@@ -186,10 +186,14 @@ namespace autohana
                 int positionClick = this.dgvAccounts.HitTest(e.X, e.Y).RowIndex;
                 if (positionClick >= 0)
                 {
-                    menu_dgv.Items.Add("BackUp").Name = "BackUp";
+                    menu_dgv.Items.Add("Mở chrome").Name = "Mở chrome";
+                    menu_dgv.Items.Add("Mở m.facebook").Name = "m.facebook";
+                    menu_dgv.Items.Add("BackUp ảnh bạn bè").Name = "BackUp ảnh bạn bè";
+                    menu_dgv.Items.Add("BackUp toàn bộ").Name = "BackUp toàn bộ";
                     menu_dgv.Items.Add("Mở file BackUp").Name = "Mở file BackUp";
                     menu_dgv.Items.Add("Đăng kí Hana").Name = "Đăng kí Hana";
                     menu_dgv.Items.Add("Delete").Name = "Delete";
+                    menu_dgv.Items.Add("Quét thành viên Group").Name = "Quét thành viên Group";
                 }
                 menu_dgv.Show(dgvAccounts, new Point(e.X, e.Y));
                 if (dgvAccounts.SelectedRows.Count == 1)
@@ -206,8 +210,17 @@ namespace autohana
             {
                 switch (e.ClickedItem.Name.ToString())
                 {
-                    case "BackUp":
-                        BackUpFacebook(row.Index);
+                    case "Mở chrome":
+                        OpenChrome(row.Index);
+                        break;
+                    case "m.facebook":
+                        OpenFacebook(row.Index);
+                        break;
+                    case "BackUp ảnh bạn bè":
+                        BackUpFacebookOnlyImageFriend(row.Index);
+                        break;
+                    case "BackUp toàn bộ":
+                        BackUpFacebookAll(row.Index);
                         break;
                     case "Mở file BackUp":
                         OpenFileBackUp(dgvAccounts.Rows[row.Index].Cells["id"].Value.ToString());
@@ -217,6 +230,9 @@ namespace autohana
                         break;
                     case "Delete":
                         dgvAccounts.Rows.Remove(row);
+                        break;
+                    case "Quét thành viên Group":
+                        QuetThanhVienGroup(row.Index);
                         break;
                 }
             }
@@ -492,7 +508,7 @@ namespace autohana
 
 
         #region BackUp Facebook
-        private void BackUpFacebook(int rowIndex)
+        private void BackUpFacebookAll(int rowIndex)
         {
             Task t = new Task(() =>
             {
@@ -504,11 +520,93 @@ namespace autohana
                 UpdateValueFormForFb(ref facebook);
                 string userIdFb = facebook.Login(chromeDriver[rowIndex]);
                 if (userIdFb == null) { return; }
-                facebook.BackUpFacebook(chromeDriver[rowIndex]);
+                facebook.BackUpFacebookAll(chromeDriver[rowIndex]);
+            });
+            t.Start();
+        }
+        private void BackUpFacebookOnlyImageFriend(int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                UpdateValueFormForFb(ref facebook);
+                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
+                if (userIdFb == null) { return; }
+                facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex]);
             });
             t.Start();
         }
         #endregion
+
+        #region mở facebook
+        private void OpenFacebook(int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                UpdateValueFormForFb(ref facebook);
+                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
+                return;
+            });
+            t.Start();
+        }
+        private void OpenChrome(int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex);
+                return;
+            });
+            t.Start();
+        }
+        #endregion
+
+        #region crowl dữ liệu
+        private void QuetThanhVienGroup(int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                UpdateValueFormForFb(ref facebook);
+                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
+                if (userIdFb == null) { return; }
+                facebook.QuetThanhVienGroup(chromeDriver[rowIndex]);
+            });
+            t.Start();
+        }
+
+        private void LocNguoiDung(int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                UpdateValueFormForFb(ref facebook);
+                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
+                if (userIdFb == null) { return; }
+                facebook.LocNguoiDung(chromeDriver[rowIndex]);
+            });
+            t.Start();
+        }
+        #endregion
+        private void locthanhvien_Click(object sender, EventArgs e)
+        {
+            LocNguoiDung(2);
+        }
 
     }
 }

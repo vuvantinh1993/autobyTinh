@@ -43,14 +43,6 @@
             this.sotiennhan = new System.Windows.Forms.Label();
             this.soLanKhongGiaiDuoctien = new System.Windows.Forms.Label();
             this.dgvAccounts = new System.Windows.Forms.DataGridView();
-            this.checkLoadImage = new System.Windows.Forms.CheckBox();
-            this.ConvertData = new System.Windows.Forms.Button();
-            this.uidAddHana = new System.Windows.Forms.TextBox();
-            this.passAddHana = new System.Windows.Forms.TextBox();
-            this.listAccounts = new System.Windows.Forms.Button();
-            this.clean = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
-            this.isCheckBackUpFriendNew = new System.Windows.Forms.CheckBox();
             this.stt = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Id = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Pass = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -72,6 +64,15 @@
             this.status = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Action = new System.Windows.Forms.DataGridViewButtonColumn();
             this.UserAgent = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.checkLoadImage = new System.Windows.Forms.CheckBox();
+            this.ConvertData = new System.Windows.Forms.Button();
+            this.uidAddHana = new System.Windows.Forms.TextBox();
+            this.passAddHana = new System.Windows.Forms.TextBox();
+            this.listAccounts = new System.Windows.Forms.Button();
+            this.clean = new System.Windows.Forms.Button();
+            this.button1 = new System.Windows.Forms.Button();
+            this.isCheckBackUpFriendNew = new System.Windows.Forms.CheckBox();
+            this.locthanhvien = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.delayFrom)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.delayTo)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.JobMaxOfDay)).BeginInit();
@@ -228,84 +229,6 @@
             this.dgvAccounts.TabIndex = 29;
             this.dgvAccounts.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dataGridView1_CellContentClick);
             this.dgvAccounts.MouseClick += new System.Windows.Forms.MouseEventHandler(this.dgvAccounts_MouseClick);
-            // 
-            // checkLoadImage
-            // 
-            this.checkLoadImage.AutoSize = true;
-            this.checkLoadImage.Location = new System.Drawing.Point(402, 67);
-            this.checkLoadImage.Name = "checkLoadImage";
-            this.checkLoadImage.Size = new System.Drawing.Size(91, 17);
-            this.checkLoadImage.TabIndex = 30;
-            this.checkLoadImage.Text = "không tải ảnh";
-            this.checkLoadImage.UseVisualStyleBackColor = true;
-            // 
-            // ConvertData
-            // 
-            this.ConvertData.Location = new System.Drawing.Point(402, 91);
-            this.ConvertData.Name = "ConvertData";
-            this.ConvertData.Size = new System.Drawing.Size(155, 23);
-            this.ConvertData.TabIndex = 31;
-            this.ConvertData.Text = "Convert Data";
-            this.ConvertData.UseVisualStyleBackColor = true;
-            this.ConvertData.Click += new System.EventHandler(this.ConvertData_Click);
-            // 
-            // uidAddHana
-            // 
-            this.uidAddHana.Location = new System.Drawing.Point(566, 93);
-            this.uidAddHana.Name = "uidAddHana";
-            this.uidAddHana.Size = new System.Drawing.Size(197, 20);
-            this.uidAddHana.TabIndex = 32;
-            // 
-            // passAddHana
-            // 
-            this.passAddHana.Location = new System.Drawing.Point(769, 93);
-            this.passAddHana.Name = "passAddHana";
-            this.passAddHana.Size = new System.Drawing.Size(187, 20);
-            this.passAddHana.TabIndex = 33;
-            // 
-            // listAccounts
-            // 
-            this.listAccounts.Location = new System.Drawing.Point(976, 93);
-            this.listAccounts.Name = "listAccounts";
-            this.listAccounts.Size = new System.Drawing.Size(95, 23);
-            this.listAccounts.TabIndex = 34;
-            this.listAccounts.Text = "DS tài khoản";
-            this.listAccounts.UseVisualStyleBackColor = true;
-            this.listAccounts.Click += new System.EventHandler(this.listAccounts_Click);
-            // 
-            // clean
-            // 
-            this.clean.Location = new System.Drawing.Point(1077, 93);
-            this.clean.Name = "clean";
-            this.clean.Size = new System.Drawing.Size(75, 23);
-            this.clean.TabIndex = 35;
-            this.clean.Text = "Clean";
-            this.clean.UseVisualStyleBackColor = true;
-            this.clean.Click += new System.EventHandler(this.clean_Click);
-            // 
-            // button1
-            // 
-            this.button1.Location = new System.Drawing.Point(253, 90);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 36;
-            this.button1.Tag = " ";
-            this.button1.Text = "button1";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
-            // 
-            // isCheckBackUpFriendNew
-            // 
-            this.isCheckBackUpFriendNew.AutoSize = true;
-            this.isCheckBackUpFriendNew.Checked = true;
-            this.isCheckBackUpFriendNew.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.isCheckBackUpFriendNew.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
-            this.isCheckBackUpFriendNew.Location = new System.Drawing.Point(499, 66);
-            this.isCheckBackUpFriendNew.Name = "isCheckBackUpFriendNew";
-            this.isCheckBackUpFriendNew.Size = new System.Drawing.Size(164, 17);
-            this.isCheckBackUpFriendNew.TabIndex = 37;
-            this.isCheckBackUpFriendNew.Text = "Chỉ BackUp những người mới";
-            this.isCheckBackUpFriendNew.UseVisualStyleBackColor = true;
             // 
             // stt
             // 
@@ -494,9 +417,98 @@
             this.UserAgent.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.NotSortable;
             this.UserAgent.Visible = false;
             // 
+            // checkLoadImage
+            // 
+            this.checkLoadImage.AutoSize = true;
+            this.checkLoadImage.Location = new System.Drawing.Point(402, 67);
+            this.checkLoadImage.Name = "checkLoadImage";
+            this.checkLoadImage.Size = new System.Drawing.Size(91, 17);
+            this.checkLoadImage.TabIndex = 30;
+            this.checkLoadImage.Text = "không tải ảnh";
+            this.checkLoadImage.UseVisualStyleBackColor = true;
+            // 
+            // ConvertData
+            // 
+            this.ConvertData.Location = new System.Drawing.Point(402, 91);
+            this.ConvertData.Name = "ConvertData";
+            this.ConvertData.Size = new System.Drawing.Size(155, 23);
+            this.ConvertData.TabIndex = 31;
+            this.ConvertData.Text = "Convert Data";
+            this.ConvertData.UseVisualStyleBackColor = true;
+            this.ConvertData.Click += new System.EventHandler(this.ConvertData_Click);
+            // 
+            // uidAddHana
+            // 
+            this.uidAddHana.Location = new System.Drawing.Point(566, 93);
+            this.uidAddHana.Name = "uidAddHana";
+            this.uidAddHana.Size = new System.Drawing.Size(197, 20);
+            this.uidAddHana.TabIndex = 32;
+            // 
+            // passAddHana
+            // 
+            this.passAddHana.Location = new System.Drawing.Point(769, 93);
+            this.passAddHana.Name = "passAddHana";
+            this.passAddHana.Size = new System.Drawing.Size(187, 20);
+            this.passAddHana.TabIndex = 33;
+            // 
+            // listAccounts
+            // 
+            this.listAccounts.Location = new System.Drawing.Point(976, 93);
+            this.listAccounts.Name = "listAccounts";
+            this.listAccounts.Size = new System.Drawing.Size(95, 23);
+            this.listAccounts.TabIndex = 34;
+            this.listAccounts.Text = "DS tài khoản";
+            this.listAccounts.UseVisualStyleBackColor = true;
+            this.listAccounts.Click += new System.EventHandler(this.listAccounts_Click);
+            // 
+            // clean
+            // 
+            this.clean.Location = new System.Drawing.Point(1077, 93);
+            this.clean.Name = "clean";
+            this.clean.Size = new System.Drawing.Size(75, 23);
+            this.clean.TabIndex = 35;
+            this.clean.Text = "Clean";
+            this.clean.UseVisualStyleBackColor = true;
+            this.clean.Click += new System.EventHandler(this.clean_Click);
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(253, 90);
+            this.button1.Name = "button1";
+            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.TabIndex = 36;
+            this.button1.Tag = " ";
+            this.button1.Text = "button1";
+            this.button1.UseVisualStyleBackColor = true;
+            this.button1.Click += new System.EventHandler(this.button1_Click);
+            // 
+            // isCheckBackUpFriendNew
+            // 
+            this.isCheckBackUpFriendNew.AutoSize = true;
+            this.isCheckBackUpFriendNew.Checked = true;
+            this.isCheckBackUpFriendNew.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.isCheckBackUpFriendNew.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(0)))), ((int)(((byte)(192)))), ((int)(((byte)(192)))));
+            this.isCheckBackUpFriendNew.Location = new System.Drawing.Point(499, 66);
+            this.isCheckBackUpFriendNew.Name = "isCheckBackUpFriendNew";
+            this.isCheckBackUpFriendNew.Size = new System.Drawing.Size(164, 17);
+            this.isCheckBackUpFriendNew.TabIndex = 37;
+            this.isCheckBackUpFriendNew.Text = "Chỉ BackUp những người mới";
+            this.isCheckBackUpFriendNew.UseVisualStyleBackColor = true;
+            // 
+            // locthanhvien
+            // 
+            this.locthanhvien.Location = new System.Drawing.Point(669, 61);
+            this.locthanhvien.Name = "locthanhvien";
+            this.locthanhvien.Size = new System.Drawing.Size(121, 23);
+            this.locthanhvien.TabIndex = 38;
+            this.locthanhvien.Text = "Lọc người dùng";
+            this.locthanhvien.UseVisualStyleBackColor = true;
+            this.locthanhvien.Click += new System.EventHandler(this.locthanhvien_Click);
+            // 
             // Auto
             // 
             this.ClientSize = new System.Drawing.Size(1313, 688);
+            this.Controls.Add(this.locthanhvien);
             this.Controls.Add(this.isCheckBackUpFriendNew);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.clean);
@@ -572,6 +584,7 @@
         private System.Windows.Forms.DataGridViewTextBoxColumn status;
         private System.Windows.Forms.DataGridViewButtonColumn Action;
         private System.Windows.Forms.DataGridViewTextBoxColumn UserAgent;
+        private System.Windows.Forms.Button locthanhvien;
     }
 }
 
