@@ -880,6 +880,56 @@ namespace autohana
             return false;
             // báo lỗi
         }
+        public bool MComment(IWebDriver chromeDriver)
+        {
+            var random = Common.RandomValue(3, 7);
+            chromeDriver.Url = "https://m.facebook.com/groups/508388105950882?ref=m_notif&notif_t=group_highlights";
+            IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+            while (random > 0)
+            {
+                js.ExecuteScript("window.scrollBy(0,700)");
+                random--;
+            }
+            var listHref = new List<string>();
+            try
+            {
+                ReadOnlyCollection<IWebElement> binhluan;
+                try
+                {
+                    binhluan = chromeDriver.FindElements(By.XPath("//a[text()='Bình luận']"));
+                }
+                catch
+                {
+                    js.ExecuteScript("window.scrollBy(0,700)");
+                    binhluan = chromeDriver.FindElements(By.XPath("//a[text()='Bình luận']"));
+                }
+                var a = new List<int>();
+                for (int i = 0; i < binhluan.Count; i++)
+                {
+                    a.Add(i);
+                }
+                var b = a.RandomList(5);
+                foreach (var number in b)
+                {
+                    listHref.Add(binhluan[number].GetAttribute("href"));
+                }
+                foreach (var item in listHref)
+                {
+                    ChoClickButtonFB("BÀI VIẾT MỚI");
+                    chromeDriver.Url = item;
+                    chromeDriver.FindElement(By.XPath("//a[text()='Bình luận']")).Click();
+                    chromeDriver.FindElement(By.XPath("//textarea[@id='composerInput']")).SendKeys("Báo giá mẫu này cho mình với ạ.");
+                    chromeDriver.FindElement(By.XPath("//input[@accept='image/*, image/heif, image/heic']")).SendKeys("C:\\Users\\TINHVU\\Desktop\\a.jpg");
+                    ChoClickButtonFB("ĐĂNG BÀI");
+                    chromeDriver.FindElement(By.XPath("//button[@aria-label='Đăng']")).Click();
+                }
+            }
+            catch (Exception e)
+            {
+            }
+            return false;
+            // báo lỗi
+        }
         #endregion
 
 

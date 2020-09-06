@@ -65,6 +65,24 @@ namespace autohana
             return randomTime;
         }
 
+        public static List<T> RandomList<T>(this IList<T> list, int number)
+        {
+            var listNew = new List<T>();
+            Random rng = new Random();
+            if (number < list.Count())
+            {
+                while (number > 0)
+                {
+                    int n = list.Count;
+                    int k = rng.Next(0, n);
+                    listNew.Add(list[k]);
+                    list.Remove(list[k]);
+                    number--;
+                }
+            }
+            return listNew;
+        }
+
 
 
         public static ReadOnlyCollection<IWebElement> WaitGetElement(IWebDriver chromeDriver, By xpath, int thoiGianDoi)

@@ -194,6 +194,7 @@ namespace autohana
                     menu_dgv.Items.Add("Đăng kí Hana").Name = "Đăng kí Hana";
                     menu_dgv.Items.Add("Delete").Name = "Delete";
                     menu_dgv.Items.Add("Quét thành viên Group").Name = "Quét thành viên Group";
+                    menu_dgv.Items.Add("Comment Group").Name = "Comment Group";
                 }
                 menu_dgv.Show(dgvAccounts, new Point(e.X, e.Y));
                 if (dgvAccounts.SelectedRows.Count == 1)
@@ -233,6 +234,9 @@ namespace autohana
                         break;
                     case "Quét thành viên Group":
                         QuetThanhVienGroup(row.Index);
+                        break;
+                    case "Comment Group":
+                        CommentGroup(row.Index);
                         break;
                 }
             }
@@ -603,6 +607,22 @@ namespace autohana
             t.Start();
         }
         #endregion
+
+        private void CommentGroup(int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                UpdateValueFormForFb(ref facebook);
+                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
+                if (userIdFb == null) { return; }
+                facebook.MComment(chromeDriver[rowIndex]);
+            });
+            t.Start();
+        }
         private void locthanhvien_Click(object sender, EventArgs e)
         {
             LocNguoiDung(2);
