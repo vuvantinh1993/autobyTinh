@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace autohana
 {
-    public static class GhiFile
+    public static class DocGhiFile
     {
         //public static string teamplate = ""
 
@@ -15,13 +16,13 @@ namespace autohana
         {
             var path = $"{Environment.CurrentDirectory}\\log\\{nameFolder}.txt";
 
-            if (!File.Exists(path))
+            if (!System.IO.File.Exists(path))
             {
-                var file = File.Create(path);
+                var file = System.IO.File.Create(path);
                 file.Close();
             }
             var stringWrite = $"{DateTime.Now} {content} \n";
-            File.AppendAllText(path, stringWrite);
+            System.IO.File.AppendAllText(path, stringWrite);
         }
 
         public static void GhiFileBackUpFromString(string uid, string content, string namefile, string typeFile, bool isImageOneFriend = false, bool isWriteContinue = true)
@@ -40,21 +41,21 @@ namespace autohana
                 {
                     Directory.CreateDirectory($"BackUp/{uid}/anhbanbe");
                 }
-                if (!File.Exists($"BackUp/{uid}/{namefile}/anhbanbe/{uid}.{typeFile}"))
+                if (!System.IO.File.Exists($"BackUp/{uid}/{namefile}/anhbanbe/{uid}.{typeFile}"))
                 {
-                    var file = File.Create($"BackUp/{uid}/{namefile}/anhbanbe/{uid}.{typeFile}");
+                    var file = System.IO.File.Create($"BackUp/{uid}/{namefile}/anhbanbe/{uid}.{typeFile}");
                     file.Close();
                 }
-                File.WriteAllText($"BackUp/{uid}/{namefile}/anhbanbe/{uid}.{typeFile}", content);
+                System.IO.File.WriteAllText($"BackUp/{uid}/{namefile}/anhbanbe/{uid}.{typeFile}", content);
             }
             else
             {
-                if (!File.Exists($"BackUp/{uid}/{namefile}.{typeFile}"))
+                if (!System.IO.File.Exists($"BackUp/{uid}/{namefile}.{typeFile}"))
                 {
-                    var file = File.Create($"BackUp/{uid}/{namefile}.{typeFile}");
+                    var file = System.IO.File.Create($"BackUp/{uid}/{namefile}.{typeFile}");
                     file.Close();
                 }
-                File.WriteAllText($"BackUp/{uid}/{namefile}.{typeFile}", content);
+                System.IO.File.WriteAllText($"BackUp/{uid}/{namefile}.{typeFile}", content);
             }
         }
 
@@ -65,12 +66,12 @@ namespace autohana
             {
                 Directory.CreateDirectory($"{namFolder}");
             }
-            if (!File.Exists($"{namFolder}/{namefile}.{typeFile}"))
+            if (!System.IO.File.Exists($"{namFolder}/{namefile}.{typeFile}"))
             {
-                var file = File.Create($"{namFolder}/{namefile}.{typeFile}");
+                var file = System.IO.File.Create($"{namFolder}/{namefile}.{typeFile}");
                 file.Close();
             }
-            File.WriteAllLines($"{namFolder}/{namefile}.{typeFile}", content);
+            System.IO.File.WriteAllLines($"{namFolder}/{namefile}.{typeFile}", content);
         }
 
         public static void GhiFileBackUpListImageFriends(string namFolder, string namefile, string typeFile, List<string> content, bool isWriteContinue = true)
@@ -79,37 +80,37 @@ namespace autohana
             {
                 Directory.CreateDirectory($"{namFolder}");
             }
-            if (!File.Exists($"{namFolder}/{namefile}.{typeFile}"))
+            if (!System.IO.File.Exists($"{namFolder}/{namefile}.{typeFile}"))
             {
-                var file = File.Create($"{namFolder}/{namefile}.{typeFile}");
+                var file = System.IO.File.Create($"{namFolder}/{namefile}.{typeFile}");
                 file.Close();
             }
-            File.WriteAllLines($"{namFolder}/{namefile}.{typeFile}", content);
+            System.IO.File.WriteAllLines($"{namFolder}/{namefile}.{typeFile}", content);
         }
 
         public static void GhiFileHTMLMoCheckPoint(string namefile, string uid, List<string> listUidNewBackUp)
         {
-            if (!File.Exists($"{namefile}"))
+            if (!System.IO.File.Exists($"{namefile}"))
             {
-                var file = File.Create($"{namefile}");
+                var file = System.IO.File.Create($"{namefile}");
                 file.Close();
-                File.WriteAllText($"{namefile}", TemplateBackUp());
+                System.IO.File.WriteAllText($"{namefile}", TemplateBackUp());
             }
-            var teamplate = File.ReadAllText($"{namefile}");
+            var teamplate = System.IO.File.ReadAllText($"{namefile}");
             var listNameFileAnhbanbe = Directory.GetFiles($"BackUp/{uid}/anhbanbe");
             var listFileNewAnhbanbe = listNameFileAnhbanbe.Where(x => listUidNewBackUp.Contains(x.Split('_')[1])).ToList();
             foreach (var nameFileAnhBanBe in listFileNewAnhbanbe)
             {
                 teamplate = teamplate.Replace("noidungtiep", TempplateOneFriend(nameFileAnhBanBe));
             }
-            File.WriteAllText($"{namefile}", teamplate);
+            System.IO.File.WriteAllText($"{namefile}", teamplate);
         }
 
         public static List<string> DocFileDSUid(string urlFile)
         {
-            if (!File.Exists($"{urlFile}"))
+            if (!System.IO.File.Exists($"{urlFile}"))
             {
-                var file = File.Create($"{urlFile}");
+                var file = System.IO.File.Create($"{urlFile}");
                 file.Close();
             }
             return File.ReadAllLines($"{urlFile}").ToList();
@@ -200,7 +201,7 @@ namespace autohana
                 $"<img src=\"http://graph.facebook.com/{uid}/picture?type=large\" width=\"100%\">\n" +
                 "</div>\n" +
                 "<div class=\"col-10\">";
-            var listImg = File.ReadAllLines(nameFileAnhBanBe);
+            var listImg = System.IO.File.ReadAllLines(nameFileAnhBanBe);
             foreach (var img in listImg)
             {
                 str += $"<img src=\"{img}\" height=\"150px\" class=\"mb-2\">\n";
@@ -209,6 +210,53 @@ namespace autohana
             str += "</div>\n";
             str += "noidungtiep\n";
             return str;
+        }
+
+        //private void ConvertData_Click(object sender, EventArgs e)
+        //{
+        //    var accounts = System.IO.File.ReadAllLines("config/fileold.txt");
+        //    List<string> listAccountNew = new List<string>();
+        //    foreach (var item in accounts)
+        //    {
+        //        var splitItem = item.Split('|');
+        //        if (splitItem.Count() == 8)
+        //        {
+        //            var c0 = splitItem[0];
+        //            var c1 = splitItem[1];
+        //            var c2 = splitItem[2];
+        //            var c3 = splitItem[3];
+        //            var c4 = splitItem[4]; // cookie
+        //            var c5 = splitItem[5];
+        //            var c6 = splitItem[6];
+        //            var c7 = splitItem[7];
+        //            var c8 = this.uidAddHana.Text;
+        //            var c9 = this.passAddHana.Text;
+        //            var c10 = "True";
+        //            var c11 = "False";
+        //            var c12 = "False";
+        //            var c13 = "False";
+        //            var c14 = "Bắt đầu";
+
+        //            var str = c0 + '|' + c1 + '|' + c2 + '|' + c3 + '|' + c4 + '|' + c5 + '|' + c6 + '|' + c7 + '|' + c8 + '|' + c9 + '|' + c10 + '|' + c11 + '|' + c12 + '|' + c13 + '|' + c14;
+        //            listAccountNew.Add(str);
+        //        }
+        //    }
+        //    if (!System.IO.File.Exists("config/accounts.txt"))
+        //    {
+        //        var file = System.IO.File.Create("config/accounts.txt");
+        //        file.Close();
+        //        System.IO.File.WriteAllLines("config/accounts.txt", listAccountNew);
+        //    }
+        //    else
+        //    {
+        //        System.IO.File.AppendAllLines("config/accounts.txt", listAccountNew);
+        //    }
+        //}
+
+
+        public static void OpenFileBackUp(string uid)
+        {
+            Process.Start("explorer", $"{Environment.CurrentDirectory}\\BackUp\\{uid}");
         }
 
     }

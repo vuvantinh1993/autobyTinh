@@ -426,6 +426,7 @@
             this.checkLoadImage.TabIndex = 30;
             this.checkLoadImage.Text = "không tải ảnh";
             this.checkLoadImage.UseVisualStyleBackColor = true;
+            this.checkLoadImage.CheckedChanged += new System.EventHandler(this.checkLoadImage_CheckedChanged);
             // 
             // ConvertData
             // 
@@ -494,6 +495,7 @@
             this.isCheckBackUpFriendNew.TabIndex = 37;
             this.isCheckBackUpFriendNew.Text = "Chỉ BackUp những người mới";
             this.isCheckBackUpFriendNew.UseVisualStyleBackColor = true;
+            this.isCheckBackUpFriendNew.CheckedChanged += new System.EventHandler(this.isCheckBackUpFriendNew_CheckedChanged);
             // 
             // locthanhvien
             // 

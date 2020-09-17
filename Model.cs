@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -61,6 +62,41 @@ namespace autohana
         public bool isBlockaction { get; set; } = false;
         public bool isError5Finish { get; set; } = false;
         public int numberJobFinish { get; set; } = 0;
+    }
+
+    public enum ActionFb
+    {
+        [Display(Name = "like bài viết")]
+        LikePost = 2,
+        [Display(Name = "like Page")]
+        Likepage = 4,
+        [Display(Name = "Theo dõi")]
+        Follow = 5,
+        [Display(Name = "Comment")]
+        Comment,
+        [Display(Name = "Angry")]
+        Angry,
+        [Display(Name = "Haha")]
+        Haha,
+        [Display(Name = "Love")]
+        Love,
+        [Display(Name = "Care")]
+        Care,
+        [Display(Name = "Wow")]
+        Wow,
+        [Display(Name = "Sad")]
+        Sad,
+    }
+
+    public enum ActionMenu
+    {
+        OpenChrome,
+        OpenFacebook,
+        BackUpFacebookOnlyImageFriend,
+        BackUpFacebookAll,
+        ChayDangKiHana,
+        QuetThanhVienGroup,
+        CommentGroup,
     }
 
 }

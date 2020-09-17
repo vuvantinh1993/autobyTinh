@@ -1,20 +1,13 @@
-﻿using Newtonsoft.Json.Linq;
-using OpenQA.Selenium;
+﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Interactions;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 namespace autohana
@@ -40,105 +33,8 @@ namespace autohana
             this.soLanKhongGiaiDuoctien.Text = "0";
             this.socapgiaikhongthanh.Text = "0";
             this.sotiennhan.Text = "0";
+            dgvAccounts.AutoGenerateColumns = false;
             this.dgvAccounts.DataSource = XLFile.DocFileTaiKhoan("config/accounts.txt");
-        }
-
-        public bool SetUpChrome(ref ChromeDriverService chromeDriverService, ref ChromeOptions chromeOptions, int rowIndex)
-        {
-            chromeDriverService.SuppressInitialDiagnosticInformation = true;
-            chromeDriverService.HideCommandPromptWindow = true;
-            if ((bool)this.dgvAccounts.Rows[rowIndex].Cells["An"].Value)
-            {
-                chromeOptions.AddArgument("--headless");
-            }
-            chromeOptions.AddArguments(new string[]
-            {
-                    "--disable-blink-features=AutomationControlled"
-            });
-            chromeOptions.AddArgument($"--user-agent={this.dgvAccounts.Rows[rowIndex].Cells["userAgent"].Value.ToString()}");
-            if (this.checkLoadImage.Checked)
-            {
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--blink-settings=imagesEnabled=false"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--enable-automation"
-                });
-                chromeOptions.AddAdditionalCapability("useAutomationExtension", false);
-            }
-
-            try
-            {
-                //chromeOptions.AddArguments(new string[]
-                //{
-                //    "--start-maximized"
-                //});
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--disable-notifications"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--disable-popup-blocking"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--disable-geolocation"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--no-sandbox"
-                });
-                chromeOptions.AddArguments(new string[]
-                {
-                    "--disable-gpu"
-                });
-                CheckAndAddProfile(ref chromeOptions, rowIndex);
-                try
-                {
-                    chromeDriver[rowIndex] = new ChromeDriver(chromeDriverService, chromeOptions);
-                    chromeDriver[rowIndex].Manage().Window.Size = new Size(400, 850);
-                }
-                catch (Exception e)
-                {
-                    dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Hãy update chromedrive mới, hoặc trình duyệt cùng profile đang bật tắt nó đi";
-                    //dgvAccounts.Rows[rowIndex].Cells["status"].Value = "2222" + e.ToString();
-                    dgvAccounts.Rows[rowIndex].Cells["Action"].Value = "Bắt đầu";
-                    return false;
-                }
-                chromeDriver[rowIndex].Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(1);
-                return true;
-            }
-            catch (Exception)
-            {
-                this.dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Có lỗi khi add arguments, tắt đi chạy lại";
-            }
-            return false;
-        }
-        private void UpdateSoCapDagiai(int socapchadagiai)
-        {
-            this.socapdagiai.Text = socapchadagiai.ToString();
-        }
-        private void UpdateSocapchadagiaikhongthanh(int socapchadagiaikhongthanh)
-        {
-            this.socapgiaikhongthanh.Text = socapchadagiaikhongthanh.ToString();
-        }
-        private void UpdateSotiendalam(int sotiendalam)
-        {
-            this.sotiennhan.Text = sotiendalam.ToString();
-        }
-        private void UpdateSolankhonggiaiduoctien(int solankhonggiaiduoctien)
-        {
-            this.soLanKhongGiaiDuoctien.Text = solankhonggiaiduoctien.ToString();
-        }
-        private void LoadForm()
-        {
-            this.socapdagiai.Invoke(new Action(() => UpdateSoCapDagiai(_soCapchaDagiai)));
-            this.socapgiaikhongthanh.Invoke(new Action(() => UpdateSocapchadagiaikhongthanh(_soCapchaDagiaiKhongthanh)));
-            this.sotiennhan.Invoke(new Action(() => UpdateSotiendalam(_soTienDalam)));
-            this.soLanKhongGiaiDuoctien.Invoke(new Action(() => UpdateSolankhonggiaiduoctien(_solanKhonggiaiduocTien)));
         }
 
         #region funtion vowis dataGirdView
@@ -163,18 +59,9 @@ namespace autohana
             }
             if (senderGrid.Columns[e.ColumnIndex] is DataGridViewCheckBoxColumn && e.RowIndex >= 0)
             {
-                // click Tạm dừng
-                if (e.ColumnIndex == 14)
+                if (e.ColumnIndex == 14 || e.ColumnIndex == 15 || e.ColumnIndex == 16 || e.ColumnIndex == 17)
                 {
-                    if ((bool)this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value)
-                    {
-                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = false;
-                    }
-                    else
-                    {
-                        // xử lý code
-                        this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = true;
-                    }
+                    Common.ChangeValueCheckBoxDGV(dgvAccounts[e.ColumnIndex, e.RowIndex], (bool)dgvAccounts[e.ColumnIndex, e.RowIndex].Value);
                 }
             }
         }
@@ -195,14 +82,16 @@ namespace autohana
                     menu_dgv.Items.Add("Delete").Name = "Delete";
                     menu_dgv.Items.Add("Quét thành viên Group").Name = "Quét thành viên Group";
                     menu_dgv.Items.Add("Comment Group").Name = "Comment Group";
+
+
+                    menu_dgv.Show(dgvAccounts, new Point(e.X, e.Y));
+                    if (dgvAccounts.SelectedRows.Count == 1)
+                    {
+                        dgvAccounts.ClearSelection();
+                    }
+                    dgvAccounts.Rows[positionClick].Selected = true;
+                    menu_dgv.ItemClicked += new ToolStripItemClickedEventHandler(my_menu_ItemChicked);
                 }
-                menu_dgv.Show(dgvAccounts, new Point(e.X, e.Y));
-                if (dgvAccounts.SelectedRows.Count == 1)
-                {
-                    dgvAccounts.ClearSelection();
-                }
-                dgvAccounts.Rows[positionClick].Selected = true;
-                menu_dgv.ItemClicked += new ToolStripItemClickedEventHandler(my_menu_ItemChicked);
             }
         }
         private void my_menu_ItemChicked(object sender, ToolStripItemClickedEventArgs e)
@@ -212,19 +101,19 @@ namespace autohana
                 switch (e.ClickedItem.Name.ToString())
                 {
                     case "Mở chrome":
-                        OpenChrome(row.Index);
+                        RunMenu(ActionMenu.OpenChrome, row.Index);
                         break;
                     case "m.facebook":
-                        OpenFacebook(row.Index);
+                        RunMenu(ActionMenu.OpenFacebook, row.Index);
                         break;
                     case "BackUp ảnh bạn bè":
-                        BackUpFacebookOnlyImageFriend(row.Index);
+                        RunMenu(ActionMenu.BackUpFacebookOnlyImageFriend, row.Index);
                         break;
                     case "BackUp toàn bộ":
-                        BackUpFacebookAll(row.Index);
+                        RunMenu(ActionMenu.BackUpFacebookAll, row.Index);
                         break;
                     case "Mở file BackUp":
-                        OpenFileBackUp(dgvAccounts.Rows[row.Index].Cells["id"].Value.ToString());
+                        DocGhiFile.OpenFileBackUp(dgvAccounts.Rows[row.Index].Cells["id"].Value.ToString());
                         break;
                     case "Đăng kí Hana":
                         ChayDangKiHana(row.Index);
@@ -233,7 +122,7 @@ namespace autohana
                         dgvAccounts.Rows.Remove(row);
                         break;
                     case "Quét thành viên Group":
-                        QuetThanhVienGroup(row.Index);
+                        RunMenu(ActionMenu.QuetThanhVienGroup, row.Index);
                         break;
                     case "Comment Group":
                         CommentGroup(row.Index);
@@ -241,13 +130,8 @@ namespace autohana
                 }
             }
         }
-        private void OpenFileBackUp(string uid)
-        {
-            Process.Start("explorer", $"{Environment.CurrentDirectory}\\BackUp\\{uid}");
-        }
+
         #endregion
-
-
 
         private void ChayJobHana(int rowIndex)
         {
@@ -255,7 +139,8 @@ namespace autohana
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions, chromeDriver[rowIndex]);
+                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked)) return;
 
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
                 UpdateValueFormForFb(ref facebook);
@@ -341,7 +226,8 @@ namespace autohana
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions, chromeDriver[rowIndex]);
+                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked)) return;
 
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
                 string userIdFb = facebook.Login(chromeDriver[rowIndex]);
@@ -368,7 +254,8 @@ namespace autohana
                         {
                             // đăng bài code hana lên fb
                             chromeDriver[rowIndex].SwitchTo().Window(chromeDriver[rowIndex].WindowHandles.First());
-                            var urlbaiviet = facebook.ActionDangBai(chromeDriver[rowIndex], codeHana);
+                            //var urlbaiviet = facebook.ActionDangBai(chromeDriver[rowIndex], codeHana);
+                            var urlbaiviet = "";
                             if (urlbaiviet != null)
                             {
                                 chromeDriver[rowIndex].SwitchTo().Window(chromeDriver[rowIndex].WindowHandles.Last());
@@ -409,7 +296,6 @@ namespace autohana
         }
         public void UpdateValueFormForFb(ref FaceBook facebook)
         {
-            #region điều chỉnh thời gian delay thao tác, và Job max
             this.delayFrom.Invoke(new Action(() =>
             {
                 _delayFrom = (int)this.delayFrom.Value;
@@ -426,26 +312,12 @@ namespace autohana
             {
                 _chiBackupnguoimoi1 = (bool)this.isCheckBackUpFriendNew.Checked;
             }));
-            #endregion
             facebook.ChangeValueWithForm(_delayFrom, _delayTo, _chiBackupnguoimoi1);
-        }
-
-
-        private void CheckAndAddProfile(ref ChromeOptions chromeOptions, int rowIndex)
-        {
-            if (!Directory.Exists("Profile"))
-            {
-                Directory.CreateDirectory("Profile");
-            }
-            if (Directory.Exists("Profile"))
-            {
-                chromeOptions.AddArguments("user-data-dir=" + "Profile" + "\\" + this.dgvAccounts.Rows[rowIndex].Cells["id"].Value);
-            }
         }
 
         private void ConvertData_Click(object sender, EventArgs e)
         {
-            var accounts = File.ReadAllLines("config/fileold.txt");
+            var accounts = System.IO.File.ReadAllLines("config/fileold.txt");
             List<string> listAccountNew = new List<string>();
             foreach (var item in accounts)
             {
@@ -472,15 +344,15 @@ namespace autohana
                     listAccountNew.Add(str);
                 }
             }
-            if (!File.Exists("config/accounts.txt"))
+            if (!System.IO.File.Exists("config/accounts.txt"))
             {
-                var file = File.Create("config/accounts.txt");
+                var file = System.IO.File.Create("config/accounts.txt");
                 file.Close();
-                File.WriteAllLines("config/accounts.txt", listAccountNew);
+                System.IO.File.WriteAllLines("config/accounts.txt", listAccountNew);
             }
             else
             {
-                File.AppendAllLines("config/accounts.txt", listAccountNew);
+                System.IO.File.AppendAllLines("config/accounts.txt", listAccountNew);
             }
         }
 
@@ -499,7 +371,7 @@ namespace autohana
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var accounts = File.ReadAllLines("config/accounts.txt");
+            var accounts = System.IO.File.ReadAllLines("config/accounts.txt");
             List<string> listAccountNew = new List<string>();
             foreach (var item in accounts)
             {
@@ -507,106 +379,49 @@ namespace autohana
                 var str = $"{ splitItem[0] }|{ splitItem[1] }|{ splitItem[2] }|{ splitItem[5] }|{ splitItem[6] }|{ splitItem[7] }|{ splitItem[8] }|{ splitItem[9] }|{ splitItem[3] }|{ splitItem[4] }|{ splitItem[10] }|{ splitItem[11] }|{ splitItem[12] }|{ splitItem[13] }|{ splitItem[14]}|1";
                 listAccountNew.Add(str);
             }
-            File.WriteAllLines("config/account.txt", listAccountNew);
+            System.IO.File.WriteAllLines("config/account.txt", listAccountNew);
         }
 
 
-        #region BackUp Facebook
-        private void BackUpFacebookAll(int rowIndex)
+
+        private void RunMenu(ActionMenu actionMenu, int rowIndex)
         {
             Task t = new Task(() =>
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
-
-                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
-                UpdateValueFormForFb(ref facebook);
-                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null) { return; }
-                facebook.BackUpFacebookAll(chromeDriver[rowIndex]);
-            });
-            t.Start();
-        }
-        private void BackUpFacebookOnlyImageFriend(int rowIndex)
-        {
-            Task t = new Task(() =>
-            {
-                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
-                ChromeOptions chromeOptions = new ChromeOptions();
-                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
-
-                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
-                UpdateValueFormForFb(ref facebook);
-                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null) { return; }
-                facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex]);
-            });
-            t.Start();
-        }
-        #endregion
-
-        #region mở facebook
-        private void OpenFacebook(int rowIndex)
-        {
-            Task t = new Task(() =>
-            {
-                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
-                ChromeOptions chromeOptions = new ChromeOptions();
-                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
-                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
-                UpdateValueFormForFb(ref facebook);
-                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                return;
-            });
-            t.Start();
-        }
-        private void OpenChrome(int rowIndex)
-        {
-            Task t = new Task(() =>
-            {
-                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
-                ChromeOptions chromeOptions = new ChromeOptions();
-                SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex);
-                return;
-            });
-            t.Start();
-        }
-        #endregion
-
-        #region crowl dữ liệu
-        private void QuetThanhVienGroup(int rowIndex)
-        {
-            Task t = new Task(() =>
-            {
-                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
-                ChromeOptions chromeOptions = new ChromeOptions();
-                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
-                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
-                UpdateValueFormForFb(ref facebook);
-                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null) { return; }
-                facebook.QuetThanhVienGroup(chromeDriver[rowIndex]);
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions, chromeDriver[rowIndex]);
+                if (!chrome.SetUpChrome((bool)this.checkLoadImage.Checked)) return;
+                var facebook = new FaceBook(dgvAccounts, rowIndex);
+                switch (actionMenu)
+                {
+                    case ActionMenu.OpenChrome:
+                        break;
+                    case ActionMenu.OpenFacebook:
+                        facebook.OpenFacebook(chromeDriver[rowIndex], rowIndex);
+                        break;
+                    case ActionMenu.BackUpFacebookOnlyImageFriend:
+                        facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
+                        break;
+                    case ActionMenu.BackUpFacebookAll:
+                        facebook.BackUpFacebookAll(chromeDriver[rowIndex], rowIndex);
+                        break;
+                    case ActionMenu.ChayDangKiHana:
+                        break;
+                    case ActionMenu.QuetThanhVienGroup:
+                        facebook.QuetThanhVienGroup(chromeDriver[rowIndex], rowIndex);
+                        break;
+                    case ActionMenu.CommentGroup:
+                        //facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
+                        break;
+                    default:
+                        break;
+                }
             });
             t.Start();
         }
 
-        private void LocNguoiDung(int rowIndex)
-        {
-            Task t = new Task(() =>
-            {
-                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
-                ChromeOptions chromeOptions = new ChromeOptions();
-                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
-                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
-                UpdateValueFormForFb(ref facebook);
-                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null) { return; }
-                facebook.LocNguoiDung(chromeDriver[rowIndex]);
-            });
-            t.Start();
-        }
-        #endregion
+
 
         private void CommentGroup(int rowIndex)
         {
@@ -614,19 +429,56 @@ namespace autohana
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                if (!SetUpChrome(ref chromeDriverService, ref chromeOptions, rowIndex)) return;
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions, chromeDriver[rowIndex]);
+                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked)) return;
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
                 UpdateValueFormForFb(ref facebook);
                 string userIdFb = facebook.Login(chromeDriver[rowIndex]);
                 if (userIdFb == null) { return; }
-                facebook.MComment(chromeDriver[rowIndex]);
+                facebook.MActionJobComment(chromeDriver[rowIndex]);
             });
             t.Start();
         }
         private void locthanhvien_Click(object sender, EventArgs e)
         {
-            LocNguoiDung(2);
         }
 
+
+
+        #region có thể sẽ bỏ Hana
+        private void UpdateSoCapDagiai(int socapchadagiai)
+        {
+            this.socapdagiai.Text = socapchadagiai.ToString();
+        }
+        private void UpdateSocapchadagiaikhongthanh(int socapchadagiaikhongthanh)
+        {
+            this.socapgiaikhongthanh.Text = socapchadagiaikhongthanh.ToString();
+        }
+        private void UpdateSotiendalam(int sotiendalam)
+        {
+            this.sotiennhan.Text = sotiendalam.ToString();
+        }
+        private void UpdateSolankhonggiaiduoctien(int solankhonggiaiduoctien)
+        {
+            this.soLanKhongGiaiDuoctien.Text = solankhonggiaiduoctien.ToString();
+        }
+        private void LoadForm()
+        {
+            this.socapdagiai.Invoke(new Action(() => UpdateSoCapDagiai(_soCapchaDagiai)));
+            this.socapgiaikhongthanh.Invoke(new Action(() => UpdateSocapchadagiaikhongthanh(_soCapchaDagiaiKhongthanh)));
+            this.sotiennhan.Invoke(new Action(() => UpdateSotiendalam(_soTienDalam)));
+            this.soLanKhongGiaiDuoctien.Invoke(new Action(() => UpdateSolankhonggiaiduoctien(_solanKhonggiaiduocTien)));
+        }
+        #endregion
+
+        private void checkLoadImage_CheckedChanged(object sender, EventArgs e)
+        {
+            Common.ChangeValueCheckBoxForm(checkLoadImage, (bool)checkLoadImage.Checked);
+        }
+
+        private void isCheckBackUpFriendNew_CheckedChanged(object sender, EventArgs e)
+        {
+            Common.ChangeValueCheckBoxForm(isCheckBackUpFriendNew, (bool)isCheckBackUpFriendNew.Checked);
+        }
     }
 }

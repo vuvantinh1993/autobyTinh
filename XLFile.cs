@@ -19,21 +19,21 @@ namespace autohana
             {
                 Directory.CreateDirectory("config");
             }
-            if (!File.Exists(urlUserAgent))
+            if (!System.IO.File.Exists(urlUserAgent))
             {
-                var file = File.Create(urlUserAgent);
+                var file = System.IO.File.Create(urlUserAgent);
                 file.Close();
                 AddUserAgent(urlUserAgent);
             }
-            if (!File.Exists(url))
+            if (!System.IO.File.Exists(url))
             {
-                var file = File.Create(url);
+                var file = System.IO.File.Create(url);
                 file.Close();
                 AddDemoAccount(url);
             }
 
-            var accounts = File.ReadAllLines(url);
-            var listUserAgent = File.ReadAllLines("config/userAgent.txt");
+            var accounts = System.IO.File.ReadAllLines(url);
+            var listUserAgent = System.IO.File.ReadAllLines("config/userAgent.txt");
             foreach (var account in accounts)
             {
                 var item = account.Split('|');
@@ -71,13 +71,13 @@ namespace autohana
                 "Mozilla/5.0 (Linux; Android 9; SM-N950U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.93 Mobile Safari/537.36\n" +
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/80.0.3987.95 Mobile/15E148 Safari/604.1\n" +
                 "Mozilla/5.0 (iPad; CPU OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/79.0.3945.73 Mobile/15E148 Safari/604.1\n";
-            File.WriteAllText(url, str);
+            System.IO.File.WriteAllText(url, str);
         }
 
         public static void AddDemoAccount(string url)
         {
             var str = "0|id|pass|name|golike|passgolike|hana|passhana|2Fa|Cookie|False|False|False|False|Bắt đầu|1\n";
-            File.WriteAllText(url, str);
+            System.IO.File.WriteAllText(url, str);
         }
     }
 

@@ -12,29 +12,6 @@ using System.Windows.Forms;
 
 namespace autohana
 {
-    public enum ActionFb
-    {
-        [Display(Name = "like bài viết")]
-        LikePost = 2,
-        [Display(Name = "like Page")]
-        Likepage = 4,
-        [Display(Name = "Theo dõi")]
-        Follow = 5,
-        [Display(Name = "Comment")]
-        Comment,
-        [Display(Name = "Angry")]
-        Angry,
-        [Display(Name = "Haha")]
-        Haha,
-        [Display(Name = "Love")]
-        Love,
-        [Display(Name = "Care")]
-        Care,
-        [Display(Name = "Wow")]
-        Wow,
-        [Display(Name = "Sad")]
-        Sad,
-    }
 
     public class TypeFile
     {
@@ -113,16 +90,17 @@ namespace autohana
         {
             var a = delayFrom;
             Thread.Sleep(3000);
-
-            //var randomTime = (new Random()).Next(Auto._delayFrom, Auto._delayTo);
-            //while (randomTime > 0)
-            //{
-            //    _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"Click {nameJob} sau {randomTime} giây";
-            //    Thread.Sleep(1000);
-            //    randomTime--;
-            //}
         }
 
+        public static void ChangeValueCheckBoxDGV(DataGridViewCell dataGridViewCell, bool valueOld)
+        {
+            dataGridViewCell.Value = !valueOld;
+        }
+
+        public static void ChangeValueCheckBoxForm(CheckBox dataGridViewCell, bool valueOld)
+        {
+            dataGridViewCell.Checked = !valueOld;
+        }
 
         public static bool FindAndClickEle(string xpath, IWebDriver chromeDriver, int solantim = 10, int timemilisecondsdelay = 2)
         {
