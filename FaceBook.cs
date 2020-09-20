@@ -20,9 +20,11 @@ namespace autohana
     public partial class FaceBook
     {
         private string _urlhomeFb { get => "https://www.facebook.com/"; }
-        private string _urlhomembasicFb { get => "https://mbasic.facebook.com/"; }
-        private string _urlLogin { get => "https://facebook.com/login"; }
+        private string _urlLogin { get => "https://m.facebook.com/login.php"; }
+        private string _urlprofileFb { get => "https://m.facebook.com/profile"; }
         private string _urlhomeMFb { get => "https://m.facebook.com/home.php"; }
+        private string _urlChangeInfor { get => "https://m.facebook.com/profile/intro/edit/public"; }
+        private string _urlChangeMota { get => "https://mbasic.facebook.com/profile/basic/intro/bio"; }
         private DataGridView dgvAccounts;
         private int rowIndex;
         private static int _delayFrom;
@@ -65,15 +67,20 @@ namespace autohana
 
         #region Login Facebook
         // trả vể uId
-        public string Login(IWebDriver chromeDriver)
+        public (bool rs, Modelfb data) Login(IWebDriver chromeDriver)
         {
             dgvAccounts["status", rowIndex].Value = "Đi đăng nhập Facebook";
-            chromeDriver.Url = _urlLogin;
+            chromeDriver.Url = _urlprofileFb;
             Task.Delay(1000);
-            if (GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user") != null)
+            if (chromeDriver.Url.Contains("checkpoint"))
+            {
+                return (false, Modelfb.isCheckpoint);
+            }
+            if (!chromeDriver.Url.Contains("login.php"))
             {
                 dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
-                return GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
+                chromeDriver.Url = _urlhomeFb;
+                return (true, Modelfb.isLoginOk);
             }
             else
             {
@@ -84,7 +91,8 @@ namespace autohana
                     if (uid != null)
                     {
                         dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
-                        return GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
+                        chromeDriver.Url = _urlhomeFb;
+                        return (true, Modelfb.isLoginOk);
                     }
                 }
                 else
@@ -94,14 +102,15 @@ namespace autohana
                     if (uid != null)
                     {
                         dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
+                        chromeDriver.Url = _urlhomeFb;
                         var cookie = GetCookieFb(chromeDriver);
                         dgvAccounts.Rows[rowIndex].Cells["cookie"].Value = cookie.ToString();
-                        return cookie.FirstOrDefault(x => x.Name == "c_user").Value;
+                        return (true, Modelfb.isLoginOk);
                     }
                 }
             }
             dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thất bại";
-            return null;
+            return (false, Modelfb.isloginNotOk);
         }
         public string LoginWithCookie(string cookies, IWebDriver chromeDriver)
         {
@@ -138,18 +147,9 @@ namespace autohana
             return cookie;
         }
         // truyên trang home fb
-        public string GetUserIdFromHome(IWebDriver chromeDriver)
+        public string GetUserIdFromCookie()
         {
-            try
-            {
-                var element = chromeDriver.FindElement(By.XPath("//li[@data-type=\"type_user\"]"));
-                var userId = element.GetAttribute("data-nav-item-id");
-                return userId;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return new Regex(@"c_user=\d*").Match(dgvAccounts["cookie", rowIndex].Value.ToString()).Value.Replace("c_user=", "");
         }
         public string LoginFbWithUidAndPass(string userId, string pass, IWebDriver chromeDriver)
         {
@@ -828,7 +828,6 @@ namespace autohana
             }
             return false;
         }
-
         // vào trang danh sách bạn bè, tìm các tài khoản chưa backup 
         // trả về danh sách UID chưa được backup
         // mặc định nếu file listfriend.txt không có dữ liệu thì backup hết, nếu file có dữ liệu thì backUp những bạn mới
@@ -937,7 +936,6 @@ namespace autohana
             }
             return false;
         }
-
         private bool BackUpBaoMat(IWebDriver chromeDriver, string uidFb)
         {
             dgvAccounts["status", rowIndex].Value = $"BackUp bảo mật";
@@ -967,6 +965,84 @@ namespace autohana
         }
         #endregion
 
+        #region changeinfor
+        public bool ChangeAvartar(IWebDriver chromeDriver, string urlimg)
+        {
+            chromeDriver.Url = _urlChangeInfor;
+            try
+            {
+                chromeDriver.FindElement(By.XPath("//img[@id='u_0_7']")).Click();
+                Thread.Sleep(1000);
+                chromeDriver.FindElement(By.XPath("//input[@id='nuxPicFileInput']")).SendKeys(urlimg);
+                Thread.Sleep(1000);
+                chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh đại diện']")).Click();
+                Thread.Sleep(1000);
+            }
+            catch (Exception e)
+            {
+
+            }
+            return true;
+        }
+        public bool ChangeAnhBia(IWebDriver chromeDriver, string urlimg)
+        {
+            chromeDriver.Url = _urlChangeInfor;
+            try
+            {
+                chromeDriver.FindElement(By.XPath("//img[@id='u_0_j']")).Click();
+                Thread.Sleep(1000);
+                chromeDriver.FindElement(By.XPath("//h1[contains(., 'Tải ảnh lên')]/parent::*/parent::*/parent::*")).Click();
+                //chromeDriver.FindElement(By.XPath("//i[@class='_4q9b img sp_gOzSA1_YjT5_3x sx_38276f']")).Click();
+                chromeDriver.FindElement(By.XPath("//input[@id='nuxPicFileInput']")).SendKeys(urlimg);
+                Thread.Sleep(1000);
+                chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh bìa']")).Click();
+                Thread.Sleep(1000);
+            }
+            catch (Exception e)
+            {
+
+            }
+            return true;
+        }
+        public bool ChangeMoTaBanThan(IWebDriver chromeDriver, string urlimg)
+        {
+            chromeDriver.Url = _urlChangeMota;
+            try
+            {
+                chromeDriver.FindElement(By.XPath("//textarea[@name='bio']")).Clear();
+                chromeDriver.FindElement(By.XPath("//textarea[@name='bio']")).SendKeys(urlimg);
+                Thread.Sleep(1000);
+                chromeDriver.FindElement(By.XPath("//input[@value='Lưu']")).Click();
+                Thread.Sleep(1000);
+            }
+            catch (Exception e)
+            {
+
+            }
+            return true;
+        }
+        public bool ChangeThongtin(IWebDriver chromeDriver, string urlimg)
+        {
+            chromeDriver.Url = _urlChangeInfor;
+            try
+            {
+                chromeDriver.FindElement(By.XPath("//div[@id='u_0_11']")).Click();
+                Thread.Sleep(1000);
+                chromeDriver.FindElement(By.XPath("//h1[contains(., 'Tải ảnh lên')]/parent::*/parent::*/parent::*")).Click();
+                //chromeDriver.FindElement(By.XPath("//i[@class='_4q9b img sp_gOzSA1_YjT5_3x sx_38276f']")).Click();
+                chromeDriver.FindElement(By.XPath("//input[@id='nuxPicFileInput']")).SendKeys(urlimg);
+                Thread.Sleep(1000);
+                chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh bìa']")).Click();
+                Thread.Sleep(1000);
+            }
+            catch (Exception e)
+            {
+
+            }
+            return true;
+        }
+        #endregion
+
         public void ChoClickButtonFB(string nameJob = "thao tác")
         {
             var randomTime = (new Random()).Next(_delayFrom, _delayTo);
@@ -986,15 +1062,8 @@ namespace autohana
 
 
         #region Menu
-        public void OpenFacebook(IWebDriver chromeDriver, int rowIndex)
-        {
-            string userIdFb = Login(chromeDriver);
-            return;
-        }
         public void BackUpFacebookAll(IWebDriver chromeDriver, int rowIndex)
         {
-            string userIdFb = Login(chromeDriver);
-            if (userIdFb == null) { return; }
             var uidFb = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
             BackupThongTinCoBan(chromeDriver, uidFb);
             DocGhiFile.CreadFolder($"BackUp/{uidFb}/anhbanbe");
@@ -1003,8 +1072,6 @@ namespace autohana
         }
         public void BackUpFacebookOnlyImageFriend(IWebDriver chromeDriver, int rowIndex)
         {
-            string userIdFb = Login(chromeDriver);
-            if (userIdFb == null) { return; }
             var uidFb = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
             DocGhiFile.CreadFolder($"BackUp/{uidFb}/anhbanbe");
             BackUpAnhBanBe(chromeDriver, uidFb);
@@ -1012,8 +1079,6 @@ namespace autohana
         }
         public void QuetThanhVienGroup(IWebDriver chromeDriver, int rowIndex)
         {
-            string userIdFb = Login(chromeDriver);
-            if (userIdFb == null) { return; }
             dgvAccounts["status", rowIndex].Value = $"Đi quét group";
             try
             {
@@ -1042,8 +1107,8 @@ namespace autohana
         }
         public void LocNguoiDung(IWebDriver chromeDriver, int rowIndex)
         {
-            string userIdFb = Login(chromeDriver);
-            if (userIdFb == null) { return; }
+            var rsLogin = Login(chromeDriver);
+            if (rsLogin.rs == false) { return; }
             dgvAccounts["status", rowIndex].Value = $"Loc thành viên tương tác thật";
             try
             {

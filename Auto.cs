@@ -139,13 +139,13 @@ namespace autohana
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions, chromeDriver[rowIndex]);
-                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked)) return;
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
+                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
 
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
                 UpdateValueFormForFb(ref facebook);
-                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null) { return; }
+                var rsLogin = facebook.Login(chromeDriver[rowIndex]);
+                if (rsLogin.rs == false) { return; }
 
                 // nếu login fb được thì làm tiếp
                 if (this.dgvAccounts.Rows[rowIndex].Cells["hana"].Value.ToString() != null && this.dgvAccounts.Rows[rowIndex].Cells["passhana"].Value.ToString() != null && (bool)this.dgvAccounts.Rows[rowIndex].Cells["runhana"].Value)
@@ -226,12 +226,12 @@ namespace autohana
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions, chromeDriver[rowIndex]);
-                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked)) return;
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
+                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
 
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
-                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null) { return; }
+                var rsLogin = facebook.Login(chromeDriver[rowIndex]);
+                if (rsLogin.rs == false) { return; }
 
                 // mả tab 2 Hana
                 Actions actionProvider = new Actions(chromeDriver[rowIndex]);
@@ -382,40 +382,49 @@ namespace autohana
             System.IO.File.WriteAllLines("config/account.txt", listAccountNew);
         }
 
-
-
         private void RunMenu(ActionMenu actionMenu, int rowIndex)
         {
             Task t = new Task(() =>
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions, chromeDriver[rowIndex]);
-                if (!chrome.SetUpChrome((bool)this.checkLoadImage.Checked)) return;
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
+                if (!chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
                 var facebook = new FaceBook(dgvAccounts, rowIndex);
-                switch (actionMenu)
+                if (actionMenu == ActionMenu.OpenChrome)
                 {
-                    case ActionMenu.OpenChrome:
-                        break;
-                    case ActionMenu.OpenFacebook:
-                        facebook.OpenFacebook(chromeDriver[rowIndex], rowIndex);
-                        break;
-                    case ActionMenu.BackUpFacebookOnlyImageFriend:
-                        facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
-                        break;
-                    case ActionMenu.BackUpFacebookAll:
-                        facebook.BackUpFacebookAll(chromeDriver[rowIndex], rowIndex);
-                        break;
-                    case ActionMenu.ChayDangKiHana:
-                        break;
-                    case ActionMenu.QuetThanhVienGroup:
-                        facebook.QuetThanhVienGroup(chromeDriver[rowIndex], rowIndex);
-                        break;
-                    case ActionMenu.CommentGroup:
-                        //facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
-                        break;
-                    default:
-                        break;
+                    return;
+                }
+                else
+                {
+                    var rsLogin = facebook.Login(chromeDriver[rowIndex]);
+                    if (!rsLogin.rs)
+                    {
+                        return;
+                    }
+                    facebook.ChangeThongtin(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
+                    facebook.ChangeMoTaBanThan(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
+                    facebook.ChangeAnhBia(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
+                    facebook.ChangeAvartar(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
+                    switch (actionMenu)
+                    {
+                        case ActionMenu.OpenFacebook:
+                            break;
+                        case ActionMenu.BackUpFacebookOnlyImageFriend:
+                            facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
+                            break;
+                        case ActionMenu.BackUpFacebookAll:
+                            facebook.BackUpFacebookAll(chromeDriver[rowIndex], rowIndex);
+                            break;
+                        case ActionMenu.ChayDangKiHana:
+                            break;
+                        case ActionMenu.QuetThanhVienGroup:
+                            facebook.QuetThanhVienGroup(chromeDriver[rowIndex], rowIndex);
+                            break;
+                        case ActionMenu.CommentGroup:
+                            //facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
+                            break;
+                    }
                 }
             });
             t.Start();
@@ -429,12 +438,12 @@ namespace autohana
             {
                 ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
                 ChromeOptions chromeOptions = new ChromeOptions();
-                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions, chromeDriver[rowIndex]);
-                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked)) return;
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
+                if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
                 UpdateValueFormForFb(ref facebook);
-                string userIdFb = facebook.Login(chromeDriver[rowIndex]);
-                if (userIdFb == null) { return; }
+                var rsLogin = facebook.Login(chromeDriver[rowIndex]);
+                if (rsLogin.rs == false) { return; }
                 facebook.MActionJobComment(chromeDriver[rowIndex]);
             });
             t.Start();
