@@ -1024,6 +1024,7 @@ namespace autohana
         public bool ChangeThongtin(IWebDriver chromeDriver, string urlimg)
         {
             chromeDriver.Url = _urlChangeInfor;
+            chromeDriver.Url = UrlInfomationMFa("100005592542762");
             try
             {
                 chromeDriver.FindElement(By.XPath("//div[@id='u_0_11']")).Click();
