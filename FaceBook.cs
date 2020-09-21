@@ -20,13 +20,9 @@ namespace autohana
     public partial class FaceBook
     {
         private string _urlhomeFb { get => "https://www.facebook.com/"; }
-<<<<<<< HEAD
         private string _urlmesChuadoc { get => "https://mbasic.facebook.com/messages/?folder=unread"; }
-        private string _urlLogin { get => "https://facebook.com/login"; }
-=======
         private string _urlLogin { get => "https://m.facebook.com/login.php"; }
         private string _urlprofileFb { get => "https://m.facebook.com/profile"; }
->>>>>>> e7c7cdbfa93ecf2deb960eaccacded7274b12565
         private string _urlhomeMFb { get => "https://m.facebook.com/home.php"; }
         private string _urlChangeInfor { get => "https://m.facebook.com/profile/intro/edit/public"; }
         private string _urlChangeMota { get => "https://mbasic.facebook.com/profile/basic/intro/bio"; }
