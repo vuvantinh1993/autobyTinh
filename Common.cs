@@ -22,6 +22,7 @@ namespace autohana
     public static class Common
     {
 
+
         public static void Delay(int seconde)
         {
             while (seconde > 0)

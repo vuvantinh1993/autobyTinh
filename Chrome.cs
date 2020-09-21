@@ -16,18 +16,20 @@ namespace autohana
         DataGridView dgvAccounts;
         int rowIndex;
         ChromeOptions chromeOptions;
-        IWebDriver chromeDriver;
+        //IWebDriver chromeDriver;
         ChromeDriverService chromeDriverService;
-        public Chrome(DataGridView dgvAccounts, int rowIndex, ChromeDriverService chromeDriverService, ChromeOptions chromeOptions, IWebDriver chromeDriver)
+        public Chrome(DataGridView dgvAccounts, int rowIndex, ChromeDriverService chromeDriverService, ChromeOptions chromeOptions
+            //, ref IWebDriver chromeDriver
+            )
         {
             this.dgvAccounts = dgvAccounts;
             this.rowIndex = rowIndex;
             this.chromeOptions = chromeOptions;
-            this.chromeDriver = chromeDriver;
+            //this.chromeDriver = chromeDriver;
             this.chromeDriverService = chromeDriverService;
         }
 
-        public bool SetUpChrome(bool ischeckLoadImage)
+        public bool SetUpChrome(bool ischeckLoadImage, ref IWebDriver chromeDriver)
         {
             chromeDriverService.SuppressInitialDiagnosticInformation = true;
             chromeDriverService.HideCommandPromptWindow = true;

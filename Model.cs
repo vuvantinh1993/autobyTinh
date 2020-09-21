@@ -64,6 +64,15 @@ namespace autohana
         public int numberJobFinish { get; set; } = 0;
     }
 
+    public enum Modelfb
+    {
+        isLoginOk,
+        isloginNotOk,
+        isCheckpoint,
+        isBlockaction
+    }
+
+
     public enum ActionFb
     {
         [Display(Name = "like bài viết")]
