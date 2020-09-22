@@ -20,6 +20,7 @@ namespace autohana
     public partial class FaceBook
     {
         private string _urlhomeFb { get => "https://www.facebook.com/"; }
+        private string _urlmesChuadoc { get => "https://mbasic.facebook.com/messages/?folder=unread"; }
         private string _urlLogin { get => "https://m.facebook.com/login.php"; }
         private string _urlprofileFb { get => "https://m.facebook.com/profile"; }
         private string _urlhomeMFb { get => "https://m.facebook.com/home.php"; }
@@ -399,18 +400,7 @@ namespace autohana
             }
             return false;
         }
-        private void ConvertFBPhoneToWeb(IWebDriver chromeDriver)
-        {
-            var url = chromeDriver.Url;
-            if (url.Contains("://m.facebook.com"))
-            {
-                var urlnew = url.Replace("//m.", "//www.");
-                chromeDriver.Url = urlnew;
-            }
-            return;
-        }
         #endregion
-
 
         #region action lamJob
         private bool MActionJobFollow(IWebDriver chromeDriver)
@@ -568,7 +558,6 @@ namespace autohana
             // báo lỗi
         }
         #endregion
-
 
         #region tuong tác newfeed
         private void TrithongMinh(int rowIndex, IWebDriver chromeDriver)
@@ -802,8 +791,47 @@ namespace autohana
             return false;
             // báo lỗi
         }
-        #endregion
+        private bool MCheckMess(IWebDriver chromeDriver)
+        {
+            var listContain = new List<ModelMess>();
+            try
+            {
+                while (true)
+                {
+                    chromeDriver.Url = _urlmesChuadoc;
+                    Thread.Sleep(1000);
+                    chromeDriver.FindElement(By.XPath("//h3[@class='bz ca cb']")).Click();
 
+                    var noidungs = chromeDriver.FindElements(By.XPath("//div[@class='bt']"));
+                    foreach (var noidung in noidungs)
+                    {
+                        listContain.Add(new ModelMess
+                        {
+                            name = noidung.FindElement(By.XPath("//strong[@class='bv']")).Text,
+                            link = noidung.FindElement(By.XPath("//a[@class='bu']")).GetAttribute("href"),
+                            contain = noidung.FindElement(By.XPath("//span")).Text,
+                        });
+                    }
+
+                    Thread.Sleep(1000);
+                    chromeDriver.FindElement(By.XPath("//textarea[@id='composerInput']")).SendKeys("Chào bạn");
+                    chromeDriver.FindElement(By.XPath("//h3[@type='submit']")).Click();
+                    Thread.Sleep(1000);
+                    chromeDriver.FindElement(By.XPath("//textarea[@id='composerInput']")).SendKeys("Bạn có thể nhắn cho mình vào tài khoản: http....");
+                    chromeDriver.FindElement(By.XPath("//h3[@type='submit']")).Click();
+                    Thread.Sleep(1000);
+                    chromeDriver.FindElement(By.XPath("//textarea[@id='composerInput']")).SendKeys("Cảm ơn bạn.");
+                    chromeDriver.FindElement(By.XPath("//h3[@type='submit']")).Click();
+                    Thread.Sleep(1000);
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return true;
+            // báo lỗi
+        }
+        #endregion
 
         #region backUp Facebook
         private bool BackupThongTinCoBan(IWebDriver chromeDriver, string uidFb)
@@ -1164,5 +1192,12 @@ namespace autohana
     public class ModelFriendFb
     {
         public string id { get; set; }
+    }
+
+    public class ModelMess
+    {
+        public string name { get; set; }
+        public string contain { get; set; }
+        public string link { get; set; }
     }
 }
