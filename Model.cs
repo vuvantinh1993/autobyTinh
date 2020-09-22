@@ -97,6 +97,16 @@ namespace autohana
         Sad,
     }
 
+    public enum ActionNuoiFbEnum
+    {
+        [Display(Name = "Love")]
+        Love,
+        [Display(Name = "Care")]
+        Care,
+        [Display(Name = "Wow")]
+        Wow,
+    }
+
     public enum ActionMenu
     {
         OpenChrome,
