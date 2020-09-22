@@ -297,7 +297,7 @@ namespace autohana
                         Regex regex2 = new Regex(@"[0-9]{1,4}");
                         jobLamHonNay = Convert.ToInt32(regex2.Match(b).Value);
                         listuser[i].Click();
-                        if (jobLamHonNay >= _JobMaxOfDay)
+                        if (jobLamHonNay >= ljobMaxOfDay)
                         {
                             _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = $"đã hoàn thành {jobLamHonNay} Job";
                             _dgvAccounts.Rows[_rowIndex].Cells["status"].Value = jobLamHonNay;

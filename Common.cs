@@ -114,7 +114,7 @@ namespace autohana
                     ele.Click();
                     return true;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     DelayMiliSeconde(timemilisecondsdelay);
                     solantimkiem++;
@@ -151,7 +151,7 @@ namespace autohana
             for (int i = 0; i < xpaths.Count(); i++)
             {
                 int j = i;
-                tasks[i] = Task<bool>.Run(() => checkElement(xpaths[j], chromeDriver));
+                tasks[i] = Task<bool>.Run(() => CheckElement(xpaths[j], chromeDriver));
             }
 
             Task.WaitAll(tasks);
@@ -165,7 +165,7 @@ namespace autohana
             return listResult;
         }
 
-        private static async Task<bool> checkElement(string xpath, IWebDriver chromeDriver)
+        private static async Task<bool> CheckElement(string xpath, IWebDriver chromeDriver)
         {
             try
             {

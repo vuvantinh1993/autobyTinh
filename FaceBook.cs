@@ -561,7 +561,7 @@ namespace autohana
                     chromeDriver.FindElement(By.XPath("//button[@aria-label='Đăng']")).Click();
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
             }
             return false;
@@ -752,7 +752,7 @@ namespace autohana
                 Thread.Sleep(1000);
                 return true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
             }
             return false;
@@ -890,7 +890,7 @@ namespace autohana
                 }
                 return listUidNewBackUp;
             }
-            catch (Exception e)
+            catch (Exception)
             {
             }
             return null;
@@ -931,7 +931,7 @@ namespace autohana
                 DocGhiFile.GhiFileBackUpListImageFriends($"BackUp/{uidProfile}/anhbanbe", $"{DateTime.UtcNow.ToString("dd-MM-yyyy")}_{uidOneFriend}_{tenBanBe}", TypeFile.Txt, listLinkImg);
                 return true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
             }
             return false;
@@ -978,7 +978,7 @@ namespace autohana
                 chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh đại diện']")).Click();
                 Thread.Sleep(1000);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -998,7 +998,7 @@ namespace autohana
                 chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh bìa']")).Click();
                 Thread.Sleep(1000);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -1015,7 +1015,7 @@ namespace autohana
                 chromeDriver.FindElement(By.XPath("//input[@value='Lưu']")).Click();
                 Thread.Sleep(1000);
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -1023,18 +1023,39 @@ namespace autohana
         }
         public bool ChangeThongtin(IWebDriver chromeDriver, string urlimg)
         {
-            chromeDriver.Url = _urlChangeInfor;
-            chromeDriver.Url = UrlInfomationMFa("100005592542762");
+            AddCongViec(chromeDriver, "VIMARU Vietnam Maritime University");
+            //chromeDriver.Url = "https://m.facebook.com/profile/intro/edit/about/";
+            //try
+            //{
+            //    chromeDriver.FindElement(By.XPath("//div[@id='u_0_11']")).Click();
+            //    Thread.Sleep(1000);
+            //    chromeDriver.FindElement(By.XPath("//h1[contains(., 'Tải ảnh lên')]/parent::*/parent::*/parent::*")).Click();
+            //    //chromeDriver.FindElement(By.XPath("//i[@class='_4q9b img sp_gOzSA1_YjT5_3x sx_38276f']")).Click();
+            //    chromeDriver.FindElement(By.XPath("//input[@id='nuxPicFileInput']")).SendKeys(urlimg);
+            //    Thread.Sleep(1000);
+            //    chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh bìa']")).Click();
+            //    Thread.Sleep(1000);
+            //}
+            //catch (Exception)
+            //{
+
+            //}
+            return true;
+        }
+
+        private bool AddCongViec(IWebDriver chromeDriver, string nameWork)
+        {
+            chromeDriver.Url = "https://m.facebook.com/profile/edit/infotab/section/forms/?life_event_surface=mtouch_profile&section=work&experience_type=2002";
             try
             {
-                chromeDriver.FindElement(By.XPath("//div[@id='u_0_11']")).Click();
-                Thread.Sleep(1000);
-                chromeDriver.FindElement(By.XPath("//h1[contains(., 'Tải ảnh lên')]/parent::*/parent::*/parent::*")).Click();
-                //chromeDriver.FindElement(By.XPath("//i[@class='_4q9b img sp_gOzSA1_YjT5_3x sx_38276f']")).Click();
-                chromeDriver.FindElement(By.XPath("//input[@id='nuxPicFileInput']")).SendKeys(urlimg);
-                Thread.Sleep(1000);
-                chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh bìa']")).Click();
-                Thread.Sleep(1000);
+                chromeDriver.FindElement(By.XPath("//input[@name='employer_text']")).SendKeys(nameWork);
+                chromeDriver.FindElement(By.XPath("//div[@class='_5apk']")).Click();
+                chromeDriver.FindElement(By.XPath("//span[@class='_2pir _592p _4y3f']")).Click();
+                var id = chromeDriver.FindElement(By.XPath("//div[@data-sigil=' jx-result']")).GetAttribute("rel");
+                //chromeDriver.FindElement(By.XPath("//input[@data-sigil='edit-employer-id']")).SendKeys(id);
+                IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
+                js.ExecuteScript($"document.getElementById('u_0_2').setAttribute('value', '{id}')");
+                chromeDriver.FindElement(By.XPath("//button[@name='save']")).Click();
             }
             catch (Exception e)
             {

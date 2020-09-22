@@ -21,10 +21,10 @@ namespace autohana
         delegate void Loadform_Delegate(int socapchadagiai, int solankhonggiaiduoctien);
         public List<Model> listUidRun = new List<Model>();
         public IWebDriver[] chromeDriver = new IWebDriver[1000];
-        public static int _delayFrom = 0;
-        public static int _delayTo = 0;
-        public static int _JobMaxOfDay = 0;
-        public bool _chiBackupnguoimoi1 = true;
+        public static int ldelayFrom = 0;
+        public static int ldelayTo = 0;
+        public static int ljobMaxOfDay = 0;
+        public bool lchiBackupnguoimoi1 = true;
 
         public Auto()
         {
@@ -191,7 +191,7 @@ namespace autohana
                                     chromeDriver[rowIndex].Quit();
                                     return;
                                 }
-                                else if (rsLamJob.isFinishTotalJob == true || (int)dgvAccounts.Rows[rowIndex].Cells["total"].Value >= _JobMaxOfDay)
+                                else if (rsLamJob.isFinishTotalJob == true || (int)dgvAccounts.Rows[rowIndex].Cells["total"].Value >= ljobMaxOfDay)
                                 {
                                     dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Hoàn thành tối đa lượng job 1 ngày";
                                     dgvAccounts.Rows[rowIndex].Cells["Action"].Value = "Bắt đầu";
@@ -298,21 +298,21 @@ namespace autohana
         {
             this.delayFrom.Invoke(new Action(() =>
             {
-                _delayFrom = (int)this.delayFrom.Value;
+                ldelayFrom = (int)this.delayFrom.Value;
             }));
             this.delayTo.Invoke(new Action(() =>
             {
-                _delayTo = (int)this.delayTo.Value;
+                ldelayTo = (int)this.delayTo.Value;
             }));
             this.JobMaxOfDay.Invoke(new Action(() =>
             {
-                _JobMaxOfDay = (int)this.JobMaxOfDay.Value;
+                ljobMaxOfDay = (int)this.JobMaxOfDay.Value;
             }));
             this.isCheckBackUpFriendNew.Invoke(new Action(() =>
             {
-                _chiBackupnguoimoi1 = (bool)this.isCheckBackUpFriendNew.Checked;
+                lchiBackupnguoimoi1 = (bool)this.isCheckBackUpFriendNew.Checked;
             }));
-            facebook.ChangeValueWithForm(_delayFrom, _delayTo, _chiBackupnguoimoi1);
+            facebook.ChangeValueWithForm(ldelayFrom, ldelayTo, lchiBackupnguoimoi1);
         }
 
         private void ConvertData_Click(object sender, EventArgs e)

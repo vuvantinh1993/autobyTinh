@@ -83,7 +83,7 @@ namespace autohana
                     chromeDriver = new ChromeDriver(chromeDriverService, chromeOptions);
                     chromeDriver.Manage().Window.Size = new Size(400, 850);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Hãy update chromedrive mới, hoặc trình duyệt cùng profile đang bật tắt nó đi";
                     dgvAccounts.Rows[rowIndex].Cells["Action"].Value = "Bắt đầu";
