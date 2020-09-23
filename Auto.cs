@@ -402,11 +402,11 @@ namespace autohana
                     {
                         return;
                     }
+                    facebook.ChangeAvartar(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
                     facebook.TrithongMinh(1, chromeDriver[rowIndex]);
                     facebook.ChangeThongtin(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
                     facebook.ChangeMoTaBanThan(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
                     facebook.ChangeAnhBia(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
-                    facebook.ChangeAvartar(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
                     switch (actionMenu)
                     {
                         case ActionMenu.OpenFacebook:

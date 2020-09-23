@@ -22,7 +22,6 @@ namespace autohana
         private string _urlhomeFb { get => "https://www.facebook.com/"; }
         private string _urlmesChuadoc { get => "https://mbasic.facebook.com/messages/?folder=unread"; }
         private string _urlLogin { get => "https://m.facebook.com/login.php"; }
-        private string _urlprofileFb { get => "https://m.facebook.com/profile"; }
         private string _urlhomeMFb { get => "https://m.facebook.com/home.php"; }
         private string _urlChangeInfor { get => "https://m.facebook.com/profile/intro/edit/public"; }
         private string _urlChangeMota { get => "https://mbasic.facebook.com/profile/basic/intro/bio"; }
@@ -71,16 +70,16 @@ namespace autohana
         public (bool rs, Modelfb data) Login(IWebDriver chromeDriver)
         {
             dgvAccounts["status", rowIndex].Value = "Đi đăng nhập Facebook";
-            chromeDriver.Url = _urlprofileFb;
+            chromeDriver.Url = _urlhomeFb;
             Task.Delay(1000);
             if (chromeDriver.Url.Contains("checkpoint"))
             {
                 return (false, Modelfb.isCheckpoint);
             }
-            if (!chromeDriver.Url.Contains("login.php"))
+            var source = chromeDriver.PageSource;
+            if (!(source.Contains("Tạo tài khoản mới") && source.Contains("Quên mật khẩu?")))
             {
                 dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
-                chromeDriver.Url = _urlhomeFb;
                 return (true, Modelfb.isLoginOk);
             }
             else
@@ -1013,9 +1012,108 @@ namespace autohana
         }
         #endregion
 
+        #region get information user
+        private ModelProfile getProfileCopy(IWebDriver chromeDriver, string uid)
+        {
+            try
+            {
+                var modelprofile = new ModelProfile();
+                chromeDriver.Url = $"https://mbasic.facebook.com/{uid}";
+                var srcAvata = chromeDriver.FindElement(By.XPath("//img[contains(@alt,'profile picture')]")).GetAttribute("src");
+                var srcAnhbia = chromeDriver.FindElement(By.XPath("//a[contains(@title,'Ảnh bìa:')]")).FindElement(By.XPath("//img")).GetAttribute("src");
+
+                chromeDriver.Url = $"https://m.facebook.com/profile.php?id={uid}&v=info";
+                var hocvans = chromeDriver.FindElements(By.XPath("//div[@class='_5cds _2lcw']"));
+                for (int j = 0; j < hocvans.Count(); j++)
+                {
+                    var capbac = chromeDriver.FindElements(By.XPath("//span[@class='_52jc _52ja']"))[j].Text;
+                    var onehocvan = new ModelHocVan();
+                    onehocvan.isToNow = false;
+                    onehocvan.name = chromeDriver.FindElements(By.XPath("//a[@class='_4e81']"))[j].Text;
+                    var time = chromeDriver.FindElements(By.XPath("//span[@class='_52jc _52j9']"))[j].Text;
+                    var times = time.Split('-');
+                    if (times.Count() == 2)
+                    {
+                        for (int i = 0; i < 2; i++)
+                        {
+                            var ngay = 1;
+                            var thang = 1;
+                            var nam = 1970;
+                            var regex = new Regex(@"\d{1,}").Matches(times[i]);
+                            if (regex.Count == 3)
+                            {
+                                ngay = Convert.ToInt32(regex[0].Value);
+                                thang = Convert.ToInt32(regex[1].Value);
+                                nam = Convert.ToInt32(regex[2].Value);
+                            }
+                            else if (regex.Count == 2)
+                            {
+                                thang = Convert.ToInt32(regex[0].Value);
+                                nam = Convert.ToInt32(regex[1].Value);
+                            }
+                            else if (regex.Count == 1)
+                            {
+                                nam = Convert.ToInt32(regex[0].Value);
+                            }
+                            if (i == 0)
+                            {
+                                onehocvan.timeFrom = new DateTime(nam, thang, ngay);
+                            }
+                            else
+                            {
+                                onehocvan.timeTo = new DateTime(nam, thang, ngay);
+                            }
+                        }
+
+                    }
+                    if (time.Contains("Hiện tại"))
+                    {
+                        onehocvan.isToNow = true;
+                    }
+                    if (capbac == "Đại học")
+                    {
+                        onehocvan.type = TypeHocVan.daihoc;
+                    }
+                    else if (capbac == "Trường trung học")
+                    {
+                        onehocvan.type = TypeHocVan.trunghoc;
+                    }
+                    if (modelprofile.listHocVans == null)
+                    {
+                        modelprofile.listHocVans = new List<ModelHocVan>();
+                    }
+                    modelprofile.listHocVans.Add(onehocvan);
+                }
+
+                modelprofile.linkAvata = srcAvata;
+                modelprofile.linkAnhBia = srcAnhbia;
+                return modelprofile;
+            }
+            catch (Exception e)
+            {
+
+            }
+            return new ModelProfile();
+
+        }
+        #endregion
+
         #region changeinfor
         public bool ChangeAvartar(IWebDriver chromeDriver, string urlimg)
         {
+            getProfileCopy(chromeDriver, "100002657636543");
+
+
+            var link1 = "https://scontent-hkg4-1.xx.fbcdn.net/v/t1.0-0/cp0/e15/q65/c0.341.2048.683a/s600x600/119448350_3153991791366044_7946483951100073213_o.jpg?_nc_cat=110&_nc_sid=3346a0&efg=eyJpIjoiYiJ9&_nc_ohc=b6QeZqILGkIAX_sPhEb&_nc_ht=scontent-hkg4-1.xx&oh=fd790b07a32f52f0961dac42bb1579d9&oe=5F8F4D85";
+
+            var link2 = "https://scontent.fhan5-5.fna.fbcdn.net/v/t1.0-1/fr/cp0/e15/q65/105034875_2914943528604206_205512394570547213_n.jpg?_nc_cat=101&_nc_sid=dbb9e7&efg=eyJpIjoiYiJ9&_nc_ohc=-mhO-gek03MAX-sSR4m&_nc_ht=scontent.fhan5-5.fna&tp=14&oh=200885ada808a124a99f3157d55d6f19&oe=5F90E784";
+
+
+
+            using (System.Net.WebClient webClient = new System.Net.WebClient())
+            {
+                webClient.DownloadFile($"{link2}", "img\\image.png");
+            }
             chromeDriver.Url = _urlChangeInfor;
             try
             {
@@ -1026,7 +1124,7 @@ namespace autohana
                 chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh đại diện']")).Click();
                 Thread.Sleep(1000);
             }
-            catch (Exception)
+            catch (Exception e)
             {
 
             }

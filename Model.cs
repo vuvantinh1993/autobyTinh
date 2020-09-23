@@ -8,6 +8,26 @@ using System.Threading.Tasks;
 
 namespace autohana
 {
+    public class ModelProfile
+    {
+        public string linkAnhBia { get; set; }
+        public string linkAvata { get; set; }
+        public List<ModelHocVan> listHocVans { get; set; }
+    }
+    public class ModelHocVan
+    {
+        public string name { get; set; }
+        public TypeHocVan type { get; set; }
+        public DateTime? timeFrom { get; set; }
+        public DateTime? timeTo { get; set; }
+        public bool? isToNow { get; set; }
+    }
+    public enum TypeHocVan
+    {
+        daihoc,
+        trunghoc
+    }
+
     public class Model
     {
         public string userId { get; set; }
