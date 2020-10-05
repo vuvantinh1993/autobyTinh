@@ -13,6 +13,19 @@ namespace autohana
         public string linkAnhBia { get; set; }
         public string linkAvata { get; set; }
         public List<ModelHocVan> listHocVans { get; set; }
+        public List<ModelNoiSong> listNoiSongs { get; set; }
+        public List<ModelCongViec> listCongVIec { get; set; }
+        public string gioiTinh { get; set; }
+        public string motaBanThan { get; set; }
+        public List<string> listimage { get; set; }
+    }
+
+    public class ModelCongViec
+    {
+        public string name { get; set; }
+        public DateTime? timeFrom { get; set; }
+        public DateTime? timeTo { get; set; }
+        public bool? isToNow { get; set; }
     }
     public class ModelHocVan
     {
@@ -27,6 +40,18 @@ namespace autohana
         daihoc,
         trunghoc
     }
+
+    public class ModelNoiSong
+    {
+        public string name { get; set; }
+        public TypeDiaChi type { get; set; }
+    }
+    public enum TypeDiaChi
+    {
+        ThanhPhoHienTai,
+        QueQuan
+    }
+
 
     public class Model
     {
@@ -125,6 +150,8 @@ namespace autohana
         Care,
         [Display(Name = "Wow")]
         Wow,
+        [Display(Name = "Haha")]
+        Haha,
     }
 
     public enum ActionMenu

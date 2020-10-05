@@ -41,7 +41,8 @@ namespace autohana
             {
                     "--disable-blink-features=AutomationControlled"
             });
-            chromeOptions.AddArgument($"--user-agent={this.dgvAccounts["userAgent", rowIndex].Value.ToString()}");
+            chromeOptions.AddArgument($"--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36");
+            //chromeOptions.AddArgument($"--user-agent={this.dgvAccounts["userAgent", rowIndex].Value.ToString()}");
             if (ischeckLoadImage)
             {
                 chromeOptions.AddArguments(new string[]
@@ -81,7 +82,7 @@ namespace autohana
                 try
                 {
                     chromeDriver = new ChromeDriver(chromeDriverService, chromeOptions);
-                    chromeDriver.Manage().Window.Size = new Size(400, 850);
+                    chromeDriver.Manage().Window.Size = new Size(600, 600);
                 }
                 catch (Exception)
                 {

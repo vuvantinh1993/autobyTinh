@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -47,7 +48,14 @@ namespace autohana
                 {
                     if (this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value.ToString() == "Bắt đầu")
                     {
-                        ChayJobHana(e.RowIndex);
+                        if ((bool)nuoinick.Checked)
+                        {
+                            NuoiNick(e.RowIndex);
+                        }
+                        else
+                        {
+                            ChayJobHana(e.RowIndex);
+                        }
                         this.dgvAccounts.Rows[e.RowIndex].Cells[e.ColumnIndex].Value = "Kết thúc";
                     }
                     else
@@ -82,7 +90,6 @@ namespace autohana
                     menu_dgv.Items.Add("Delete").Name = "Delete";
                     menu_dgv.Items.Add("Quét thành viên Group").Name = "Quét thành viên Group";
                     menu_dgv.Items.Add("Comment Group").Name = "Comment Group";
-
 
                     menu_dgv.Show(dgvAccounts, new Point(e.X, e.Y));
                     if (dgvAccounts.SelectedRows.Count == 1)
@@ -142,9 +149,9 @@ namespace autohana
                 var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
                 if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
 
-                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
                 UpdateValueFormForFb(ref facebook);
-                var rsLogin = facebook.Login(chromeDriver[rowIndex]);
+                var rsLogin = facebook.DangNhap();
                 if (rsLogin.rs == false) { return; }
 
                 // nếu login fb được thì làm tiếp
@@ -229,8 +236,8 @@ namespace autohana
                 var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
                 if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
 
-                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
-                var rsLogin = facebook.Login(chromeDriver[rowIndex]);
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
+                var rsLogin = facebook.DangNhap();
                 if (rsLogin.rs == false) { return; }
 
                 // mả tab 2 Hana
@@ -382,6 +389,46 @@ namespace autohana
             System.IO.File.WriteAllLines("config/account.txt", listAccountNew);
         }
 
+        private void NuoiNick(int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+                ChromeOptions chromeOptions = new ChromeOptions();
+                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
+                if (!chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
+                var facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
+                var rsLogin = facebook.DangNhap();
+                if (!rsLogin.rs)
+                {
+                    dgvAccounts["status", rowIndex].Value = "Đăng nhập thất bại";
+                    return;
+                }
+                dgvAccounts["status", rowIndex].Value = "Đi tương tác";
+
+                for (int i = 0; i < Convert.ToInt32(numberAction.Text); i++)
+                {
+                    CheckStopAppAuto(rowIndex);
+                    facebook.TrithongMinh(1, chromeDriver[rowIndex]);
+                    dgvAccounts["status", rowIndex].Value = $"Xong tương tác số {i + 1}";
+                    ChoClickButtonFB(rowIndex, $"thao tác  {i + 2}");
+                }
+            });
+            t.Start();
+
+        }
+
+        public void ChoClickButtonFB(int rowIndex, string nameJob = "thao tác")
+        {
+            var randomTime = (new Random()).Next(Convert.ToInt32(delayFrom.Value), Convert.ToInt32(delayTo.Value));
+            while (randomTime > 0)
+            {
+                dgvAccounts["status", rowIndex].Value = $"Click {nameJob} sau {randomTime} giây";
+                Thread.Sleep(1000);
+                randomTime--;
+            }
+        }
+
         private void RunMenu(ActionMenu actionMenu, int rowIndex)
         {
             Task t = new Task(() =>
@@ -390,23 +437,22 @@ namespace autohana
                 ChromeOptions chromeOptions = new ChromeOptions();
                 var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
                 if (!chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
-                var facebook = new FaceBook(dgvAccounts, rowIndex);
+                var facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
                 if (actionMenu == ActionMenu.OpenChrome)
                 {
                     return;
                 }
                 else
                 {
-                    var rsLogin = facebook.Login(chromeDriver[rowIndex]);
+                    var rsLogin = facebook.DangNhap();
                     if (!rsLogin.rs)
                     {
                         return;
                     }
-                    facebook.ChangeAvartar(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
-                    facebook.TrithongMinh(1, chromeDriver[rowIndex]);
-                    facebook.ChangeThongtin(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
-                    facebook.ChangeMoTaBanThan(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
-                    facebook.ChangeAnhBia(chromeDriver[rowIndex], "C:\\Users\\TINHVU\\Desktop\\a64e577f-e576-4ec4-8f57-579659dcaeda\\1.2.jpg");
+                    //facebook.ChangeThongtinFollowUid(chromeDriver[rowIndex], "12345678015525");
+
+
+                    //facebook.TrithongMinh(1, chromeDriver[rowIndex]);
                     switch (actionMenu)
                     {
                         case ActionMenu.OpenFacebook:
@@ -441,9 +487,9 @@ namespace autohana
                 ChromeOptions chromeOptions = new ChromeOptions();
                 var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
                 if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
-                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex);
+                FaceBook facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
                 UpdateValueFormForFb(ref facebook);
-                var rsLogin = facebook.Login(chromeDriver[rowIndex]);
+                var rsLogin = facebook.DangNhap();
                 if (rsLogin.rs == false) { return; }
                 facebook.MActionJobComment(chromeDriver[rowIndex]);
             });
@@ -489,6 +535,11 @@ namespace autohana
         private void isCheckBackUpFriendNew_CheckedChanged(object sender, EventArgs e)
         {
             Common.ChangeValueCheckBoxForm(isCheckBackUpFriendNew, (bool)isCheckBackUpFriendNew.Checked);
+        }
+
+        private void nuoinick_CheckedChanged(object sender, EventArgs e)
+        {
+            Common.ChangeValueCheckBoxForm(isCheckBackUpFriendNew, (bool)nuoinick.Checked);
         }
     }
 }

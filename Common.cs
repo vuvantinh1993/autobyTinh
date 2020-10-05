@@ -61,8 +61,6 @@ namespace autohana
             return listNew;
         }
 
-
-
         public static ReadOnlyCollection<IWebElement> WaitGetElement(IWebDriver chromeDriver, By xpath, int thoiGianDoi)
         {
             WebDriverWait webDriverWait = new WebDriverWait(chromeDriver, TimeSpan.FromSeconds((double)thoiGianDoi));
@@ -85,12 +83,6 @@ namespace autohana
                 result = null;
             }
             return result;
-        }
-
-        public static void ChoClickButtonFB(int rowId, DataGridView dgvAccounts, int delayFrom, int delayTo, string nameJob = "thao tác")
-        {
-            var a = delayFrom;
-            Thread.Sleep(3000);
         }
 
         public static void ChangeValueCheckBoxDGV(DataGridViewCell dataGridViewCell, bool valueOld)

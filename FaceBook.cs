@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using autohana.Otp;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
@@ -12,33 +13,36 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
 namespace autohana
 {
     public partial class FaceBook
     {
+        private string _urlMLogin { get => "https://m.facebook.com/login.php"; }
+        private string _urlLogin { get => "https://facebook.com/login.php"; }
+        private string _urlBasicLogin { get => "https://mbasic.facebook.com/login"; }
         private string _urlhomeFb { get => "https://www.facebook.com/"; }
         private string _urlmesChuadoc { get => "https://mbasic.facebook.com/messages/?folder=unread"; }
-        private string _urlLogin { get => "https://m.facebook.com/login.php"; }
         private string _urlhomeMFb { get => "https://m.facebook.com/home.php"; }
         private string _urlChangeInfor { get => "https://m.facebook.com/profile/intro/edit/public"; }
         private string _urlChangeMota { get => "https://mbasic.facebook.com/profile/basic/intro/bio"; }
         private DataGridView dgvAccounts;
         private int rowIndex;
+        private IWebDriver chromeDriver;
         private static int _delayFrom;
         private static int _delayTo;
         private static bool _chiBackupnguoimoi = true;
         public int _timeDelayAddFriendFrom = 3;
         public int _timeDelayAddFriendTo = 10;
-        public int _timeDelayBackupFrom = 6;
-        public int _timeDelayBackupTo = 30;
+        public int _timeDelayBackupFrom = 10;
+        public int _timeDelayBackupTo = 35;
 
-        public FaceBook(DataGridView dgvAccounts, int rowIndex)
+        public FaceBook(DataGridView dgvAccounts, int rowIndex, IWebDriver chromeDriver)
         {
             this.dgvAccounts = dgvAccounts;
             this.rowIndex = rowIndex;
+            this.chromeDriver = chromeDriver;
         }
 
         #region trả về 1 số url Facebook
@@ -67,17 +71,15 @@ namespace autohana
 
         #region Login Facebook
         // trả vể uId
-        public (bool rs, Modelfb data) Login(IWebDriver chromeDriver)
+        public (bool rs, Modelfb data) DangNhap()
         {
             dgvAccounts["status", rowIndex].Value = "Đi đăng nhập Facebook";
-            chromeDriver.Url = _urlhomeFb;
-            Task.Delay(1000);
-            if (chromeDriver.Url.Contains("checkpoint"))
+            chromeDriver.Url = _urlLogin;
+            if (LaCheckPoint())
             {
                 return (false, Modelfb.isCheckpoint);
             }
-            var source = chromeDriver.PageSource;
-            if (!(source.Contains("Tạo tài khoản mới") && source.Contains("Quên mật khẩu?")))
+            if (!LaTrangDangNhap())
             {
                 dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
                 return (true, Modelfb.isLoginOk);
@@ -87,34 +89,55 @@ namespace autohana
                 if (dgvAccounts.Rows[rowIndex].Cells["cookie"].Value != null)
                 {
                     dgvAccounts["status", rowIndex].Value = "Đăng nhập Fb bằng cookie";
-                    var uid = LoginWithCookie(dgvAccounts.Rows[rowIndex].Cells["cookie"].Value.ToString(), chromeDriver);
-                    if (uid != null)
+                    DangNhapVoiCookie(dgvAccounts.Rows[rowIndex].Cells["cookie"].Value.ToString());
+                    chromeDriver.Url = _urlLogin;
+                    if (LaCheckPoint())
+                    {
+                        return (false, Modelfb.isCheckpoint);
+                    }
+                    if (!LaTrangDangNhap())
                     {
                         dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
-                        chromeDriver.Url = _urlhomeFb;
                         return (true, Modelfb.isLoginOk);
                     }
                 }
-                else
+
+                dgvAccounts["status", rowIndex].Value = "Đăng nhập Fb bằng Uid và Pass";
+                DangNhapVoiUidVaPass(dgvAccounts.Rows[rowIndex].Cells["id"].Value.ToString(), dgvAccounts.Rows[rowIndex].Cells["pass"].Value.ToString());
+                chromeDriver.Url = _urlLogin;
+                if (LaCheckPoint())
                 {
-                    dgvAccounts["status", rowIndex].Value = "Đăng nhập Fb bằng Uid và Pass";
-                    var uid = LoginFbWithUidAndPass(dgvAccounts.Rows[rowIndex].Cells["id"].Value.ToString(), dgvAccounts.Rows[rowIndex].Cells["pass"].Value.ToString(), chromeDriver);
-                    if (uid != null)
-                    {
-                        dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
-                        chromeDriver.Url = _urlhomeFb;
-                        var cookie = GetCookieFb(chromeDriver);
-                        dgvAccounts.Rows[rowIndex].Cells["cookie"].Value = cookie.ToString();
-                        return (true, Modelfb.isLoginOk);
-                    }
+                    return (false, Modelfb.isCheckpoint);
+                }
+                if (!LaTrangDangNhap())
+                {
+                    dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
+                    var cookie = GetCookieFb(chromeDriver);
+                    dgvAccounts.Rows[rowIndex].Cells["cookie"].Value = cookie.ToString();
+                    return (true, Modelfb.isLoginOk);
                 }
             }
             dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thất bại";
             return (false, Modelfb.isloginNotOk);
         }
-        public string LoginWithCookie(string cookies, IWebDriver chromeDriver)
+        private bool LaTrangDangNhap()
         {
-            chromeDriver.Url = _urlhomeMFb;
+            if (chromeDriver.Url.Contains("login"))
+            {
+                return true;
+            }
+            return false;
+        }
+        private bool LaCheckPoint()
+        {
+            if (chromeDriver.Url.Contains("checkpoint"))
+            {
+                return true;
+            }
+            return false;
+        }
+        public void DangNhapVoiCookie(string cookies)
+        {
             cookies = cookies.Replace(" ", "");
             foreach (string item in cookies.Split(';'))
             {
@@ -122,17 +145,6 @@ namespace autohana
                 {
                     chromeDriver.Manage().Cookies.AddCookie(new Cookie(item.Split('=')[0], item.Split('=')[1]));
                 }
-            }
-            chromeDriver.Url = _urlhomeMFb;
-            Task.Delay(1000);
-            var cookieUid = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user");
-            if (cookieUid != null)
-            {
-                return cookieUid.Value;
-            }
-            else
-            {
-                return null;
             }
         }
         public ReadOnlyCollection<Cookie> GetCookieFb(IWebDriver chromeDriver)
@@ -151,20 +163,35 @@ namespace autohana
         {
             return new Regex(@"c_user=\d*").Match(dgvAccounts["cookie", rowIndex].Value.ToString()).Value.Replace("c_user=", "");
         }
-        public string LoginFbWithUidAndPass(string userId, string pass, IWebDriver chromeDriver)
+        public void DangNhapVoiUidVaPass(string userId, string pass)
         {
-            chromeDriver.Url = _urlLogin;
-            if (chromeDriver.Url != _urlLogin)
+            chromeDriver.Url = _urlBasicLogin;
+            chromeDriver.FindElement(By.Name("email")).SendKeys(userId);
+            chromeDriver.FindElement(By.Name("pass")).SendKeys(pass);
+            chromeDriver.FindElement(By.Name("login")).Click();
+            // neu co 2Fa thif dang nhap
+            try
             {
-                chromeDriver.FindElement(By.Name("email")).SendKeys(userId);
-                chromeDriver.FindElement(By.Name("pass")).SendKeys(pass);
-                chromeDriver.FindElement(By.Name("login")).Click();
-                if (chromeDriver.Url == _urlhomeFb)
+                if (chromeDriver.PageSource.Contains("Đăng nhập bằng một lần nhấn"))
                 {
-                    return "oke";
+                    chromeDriver.FindElement(By.XPath("//a[contains(@href,'login')]")).Click();
+                }
+                var _2fa = dgvAccounts["Fa", rowIndex].Value.ToString();
+                if (_2fa != null)
+                {
+                    var code = _2Fa.Lay2FaFB(_2fa);
+                    dgvAccounts["status", rowIndex].Value = $"Nhập mã 2Fa là {code}";
+                    Thread.Sleep(1500);
+                    chromeDriver.FindElement(By.Name("approvals_code")).SendKeys(code);
+                    chromeDriver.FindElement(By.Name("submit[Submit Code]")).Click();
+                    chromeDriver.FindElement(By.Name("submit[Continue]")).Click();
                 }
             }
-            return null;
+            catch (Exception e)
+            {
+
+            }
+
         }
         #endregion
 
@@ -561,52 +588,50 @@ namespace autohana
         #region tuong tác newfeed
         public void TrithongMinh(int rowIndex, IWebDriver chromeDriver)
         {
-            var ramdom = new Random().Next(1, 35);
-            int[] luotnewfeed = { 1, 2, 3, 4, 5, 6, 7, 25, 26, 27 };
-            int[] like = { 8, 9, 10, 11, 23 };
+            var ramdom = new Random().Next(1, 28);
+            int[] luotnewfeed = { 1, 2, 3, 4, 5, 6, 7, 25, 26, 27, 28 };
+            int[] like = { 8, 9, 10, 11, 23, };
             int[] camxuc = { 12, 13, 14, 24 };
             int[] xemthongbao = { 14, 16 };
             int[] xemprofilebanbe = { 19, 17, 18 };
             int[] xemgroup = { 20, 21, 22 };
 
-            if (ramdom <= 24)
+
+            if (chromeDriver.Url != "https://m.facebook.com/home.php")
             {
+                chromeDriver.Navigate().Back();
                 if (chromeDriver.Url != "https://m.facebook.com/home.php")
                 {
-                    chromeDriver.Navigate().Back();
-                    if (chromeDriver.Url != "https://m.facebook.com/home.php")
-                    {
-                        chromeDriver.Url = "https://m.facebook.com/home.php";
-                    }
+                    chromeDriver.Url = "https://m.facebook.com/home.php";
                 }
-                Thread.Sleep(1000);
+            }
+            Thread.Sleep(1000);
 
-                if (luotnewfeed.Contains(ramdom))
-                {
-                    MActionLuotNewFeed(chromeDriver);
-                }
-                else if (like.Contains(ramdom))
-                {
-                    dgvAccounts["status", rowIndex].Value = "Tự động Like ngẫu nhiên bài viết trên tường";
-                    MActionLikePost(chromeDriver);
-                }
-                else if (camxuc.Contains(ramdom))
-                {
-                    var ramCX = new Random().Next(1, Enum.GetNames(typeof(ActionNuoiFbEnum)).Length);
-                    MActionCamXuc(chromeDriver, (ActionNuoiFbEnum)ramCX);
-                }
-                else if (xemthongbao.Contains(ramdom))
-                {
-                    MCheckThongBao(chromeDriver);
-                }
-                else if (xemprofilebanbe.Contains(ramdom))
-                {
-                    MActionViewProfile(chromeDriver);
-                }
-                else if (xemgroup.Contains(ramdom))
-                {
-                    MActionViewGroup(chromeDriver);
-                }
+            if (luotnewfeed.Contains(ramdom))
+            {
+                MActionLuotNewFeed(chromeDriver);
+            }
+            else if (like.Contains(ramdom))
+            {
+                dgvAccounts["status", rowIndex].Value = "Tự động Like ngẫu nhiên bài viết trên tường";
+                MActionLikePost(chromeDriver);
+            }
+            else if (camxuc.Contains(ramdom))
+            {
+                var ramCX = new Random().Next(0, Enum.GetNames(typeof(ActionNuoiFbEnum)).Length);
+                MActionCamXuc(chromeDriver, (ActionNuoiFbEnum)ramCX);
+            }
+            else if (xemthongbao.Contains(ramdom))
+            {
+                MCheckThongBao(chromeDriver);
+            }
+            else if (xemprofilebanbe.Contains(ramdom))
+            {
+                MActionViewProfile(chromeDriver);
+            }
+            else if (xemgroup.Contains(ramdom))
+            {
+                MActionViewGroup(chromeDriver);
             }
         }
         private bool MActionViewProfile(IWebDriver chromeDriver)
@@ -736,7 +761,6 @@ namespace autohana
                 switch (actionFb)
                 {
                     case ActionNuoiFbEnum.Love:
-
                         dgvAccounts["status", rowIndex].Value = "Tự động thả cảm xúc LOVE";
                         Thread.Sleep(1000);
                         chromeDriver.FindElement(By.XPath("//div[@aria-label='Yêu thích']")).Click();
@@ -750,6 +774,11 @@ namespace autohana
                         dgvAccounts["status", rowIndex].Value = "Tự động thả cảm xúc WOW";
                         Thread.Sleep(1000);
                         chromeDriver.FindElement(By.XPath("//div[@aria-label='Wow']")).Click();
+                        break;
+                    case ActionNuoiFbEnum.Haha:
+                        dgvAccounts["status", rowIndex].Value = "Tự động thả cảm xúc HAHA";
+                        Thread.Sleep(1000);
+                        chromeDriver.FindElement(By.XPath("//div[@aria-label='Haha']")).Click();
                         break;
                     default:
                         return false;
@@ -946,23 +975,8 @@ namespace autohana
         {
             try
             {
-                chromeDriver.Url = UrlAlbulmImageMFa(uidOneFriend);
-                var tenBanBe = chromeDriver.FindElement(By.XPath("//a[@data-sigil='MBackNavBarClick']")).Text;
-                var listAlbumEles = chromeDriver.FindElements(By.XPath("//div[@class='item _50lb tall acw abb']"));
-                var listLinkImg = new List<string>();
-                for (int i = 0; i < listAlbumEles.Count() && i < 2; i++)
-                {
-                    Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
-                    chromeDriver.FindElements(By.XPath("//div[@class='item _50lb tall acw abb']"))[i].Click();
-
-                    Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
-                    listLinkImg.AddRange(chromeDriver.FindElements(By.XPath("//img[@class='_8brl']")).Where((x, index) => index < 7).Select(x => x.GetAttribute("src")).ToList());
-                    if (i < listAlbumEles.Count() && i < 2 - 1)
-                    {
-                        chromeDriver.Navigate().Back();
-                    }
-                }
-                if (chromeDriver.PageSource.Contains("Để bảo vệ cộng đồng khỏi spam, chúng tôi giới hạn tần suất bạn đăng bài, bình luận hoặc làm các việc khác trong khoảng thời gian nhất định.") || chromeDriver.Url.Contains("checkpoint"))
+                var imagesUid = BackUpImageFromUId(chromeDriver, uidOneFriend);
+                if (imagesUid.error)
                 {
                     return false;
                 }
@@ -975,13 +989,19 @@ namespace autohana
                 }
                 // end
 
-                DocGhiFile.GhiFileBackUpListImageFriends($"BackUp/{uidProfile}/anhbanbe", $"{DateTime.UtcNow.ToString("dd-MM-yyyy")}_{uidOneFriend}_{tenBanBe}", TypeFile.Txt, listLinkImg);
+                DocGhiFile.GhiFileBackUpListImageFriends($"BackUp/{uidProfile}/anhbanbe", $"{DateTime.UtcNow.ToString("dd-MM-yyyy")}_{uidOneFriend}_{imagesUid.nameUid}", TypeFile.Txt, imagesUid.images);
                 return true;
             }
             catch (Exception)
             {
             }
             return false;
+        }
+        private (List<string> images, string nameUid, bool error) BackUpImageFromUId(IWebDriver chromeDriver, string uidFb)
+        {
+            var listSrc = GetSrcsImgFromUID(chromeDriver, uidFb);
+            Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
+            return (listSrc.images, listSrc.nameUid, listSrc.error);
         }
         private bool BackUpBaoMat(IWebDriver chromeDriver, string uidFb)
         {
@@ -1013,107 +1033,317 @@ namespace autohana
         #endregion
 
         #region get information user
-        private ModelProfile getProfileCopy(IWebDriver chromeDriver, string uid)
+        public ModelProfile getProfileCopy(IWebDriver chromeDriver, string uid)
         {
             try
             {
                 var modelprofile = new ModelProfile();
+
                 chromeDriver.Url = $"https://mbasic.facebook.com/{uid}";
-                var srcAvata = chromeDriver.FindElement(By.XPath("//img[contains(@alt,'profile picture')]")).GetAttribute("src");
-                var srcAnhbia = chromeDriver.FindElement(By.XPath("//a[contains(@title,'Ảnh bìa:')]")).FindElement(By.XPath("//img")).GetAttribute("src");
+                var linkImage = GetLinkAvatarAndBiafromUID(chromeDriver, uid);
+                modelprofile.linkAvata = linkImage.linkAvata;
+                modelprofile.linkAnhBia = linkImage.linkAnhBia;
+                modelprofile.motaBanThan = GetMotaFromAboutAcc(chromeDriver);
+                modelprofile.listimage = GetLinksImagefromUID(chromeDriver, uid);
 
                 chromeDriver.Url = $"https://m.facebook.com/profile.php?id={uid}&v=info";
-                var hocvans = chromeDriver.FindElements(By.XPath("//div[@class='_5cds _2lcw']"));
-                for (int j = 0; j < hocvans.Count(); j++)
-                {
-                    var capbac = chromeDriver.FindElements(By.XPath("//span[@class='_52jc _52ja']"))[j].Text;
-                    var onehocvan = new ModelHocVan();
-                    onehocvan.isToNow = false;
-                    onehocvan.name = chromeDriver.FindElements(By.XPath("//a[@class='_4e81']"))[j].Text;
-                    var time = chromeDriver.FindElements(By.XPath("//span[@class='_52jc _52j9']"))[j].Text;
-                    var times = time.Split('-');
-                    if (times.Count() == 2)
-                    {
-                        for (int i = 0; i < 2; i++)
-                        {
-                            var ngay = 1;
-                            var thang = 1;
-                            var nam = 1970;
-                            var regex = new Regex(@"\d{1,}").Matches(times[i]);
-                            if (regex.Count == 3)
-                            {
-                                ngay = Convert.ToInt32(regex[0].Value);
-                                thang = Convert.ToInt32(regex[1].Value);
-                                nam = Convert.ToInt32(regex[2].Value);
-                            }
-                            else if (regex.Count == 2)
-                            {
-                                thang = Convert.ToInt32(regex[0].Value);
-                                nam = Convert.ToInt32(regex[1].Value);
-                            }
-                            else if (regex.Count == 1)
-                            {
-                                nam = Convert.ToInt32(regex[0].Value);
-                            }
-                            if (i == 0)
-                            {
-                                onehocvan.timeFrom = new DateTime(nam, thang, ngay);
-                            }
-                            else
-                            {
-                                onehocvan.timeTo = new DateTime(nam, thang, ngay);
-                            }
-                        }
-
-                    }
-                    if (time.Contains("Hiện tại"))
-                    {
-                        onehocvan.isToNow = true;
-                    }
-                    if (capbac == "Đại học")
-                    {
-                        onehocvan.type = TypeHocVan.daihoc;
-                    }
-                    else if (capbac == "Trường trung học")
-                    {
-                        onehocvan.type = TypeHocVan.trunghoc;
-                    }
-                    if (modelprofile.listHocVans == null)
-                    {
-                        modelprofile.listHocVans = new List<ModelHocVan>();
-                    }
-                    modelprofile.listHocVans.Add(onehocvan);
-                }
-
-                modelprofile.linkAvata = srcAvata;
-                modelprofile.linkAnhBia = srcAnhbia;
+                modelprofile.listCongVIec = GetCongViecFromAboutAcc(chromeDriver);
+                modelprofile.listHocVans = GetHocVanFromAboutAcc(chromeDriver);
+                modelprofile.listNoiSongs = GetNoiSongFromAboutAcc(chromeDriver);
+                modelprofile.gioiTinh = GetGioiTinhFromAboutAcc(chromeDriver);
                 return modelprofile;
             }
             catch (Exception e)
             {
-
             }
             return new ModelProfile();
 
         }
+        private (string linkAvata, string linkAnhBia) GetLinkAvatarAndBiafromUID(IWebDriver chromeDriver, string uid)
+        {
+            try
+            {
+                var urlAvata = Guid.NewGuid().ToString();
+                var urlAnhbia = Guid.NewGuid().ToString();
+                var srcAvata = chromeDriver.FindElement(By.XPath("//img[contains(@alt,'profile picture')]")).GetAttribute("src");
+                var srcAnhbia = chromeDriver.FindElement(By.CssSelector("#profile_cover_photo_container img")).GetAttribute("src");
+                using (System.Net.WebClient webClient = new System.Net.WebClient())
+                {
+                    webClient.DownloadFile($"{srcAvata}", $"img\\{urlAvata}.png");
+                    webClient.DownloadFile($"{srcAnhbia}", $"img\\{urlAnhbia}.png");
+                }
+                Directory.GetCurrentDirectory();
+                return ($"{Directory.GetCurrentDirectory()}\\img\\{urlAvata}.png", $"{Directory.GetCurrentDirectory()}\\img\\{urlAnhbia}.png");
+            }
+            catch (Exception)
+            {
+                return (null, null);
+            }
+        }
+        private List<string> GetLinksImagefromUID(IWebDriver chromeDriver, string uid)
+        {
+            try
+            {
+                var listsrc = GetSrcsImgFromUID(chromeDriver, uid);
+                var listLinks = ConvertSrcToLink(listsrc.images);
+                return listLinks;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+        private string GetGioiTinhFromAboutAcc(IWebDriver chromeDriver)
+        {
+            try
+            {
+                return chromeDriver.FindElement(By.XPath("//div[text()='Nam' or text()='Nữ']")).Text;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+        private List<ModelNoiSong> GetNoiSongFromAboutAcc(IWebDriver chromeDriver)
+        {
+            var listNoiSong = new List<ModelNoiSong>();
+            try
+            {
+                var noisongs = chromeDriver.FindElements(By.XPath("//div[@class='_4g34 _5b6q _5b6p _5i2i _52we']"));
+                for (int i = 0; i < noisongs.Count(); i++)
+                {
+                    var diachiAndType = chromeDriver.FindElements(By.XPath("//div[@class='_4g34 _5b6q _5b6p _5i2i _52we']"))[i].Text;
+                    var diachi = diachiAndType.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries)[0];
+                    var loai = diachiAndType.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries)[1];
+                    var loaidiachi = loai == "Tỉnh/Thành phố hiện tại" ? TypeDiaChi.ThanhPhoHienTai : TypeDiaChi.QueQuan;
+                    listNoiSong.Add(new ModelNoiSong { name = diachi, type = loaidiachi });
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return listNoiSong;
+        }
+        private List<ModelHocVan> GetHocVanFromAboutAcc(IWebDriver chromeDriver)
+        {
+            var listHocVans = new List<ModelHocVan>();
+            try
+            {
+                var hocvans = chromeDriver.FindElements(By.CssSelector("#education ._5cds._2lcw"));
+                for (int j = 0; j < hocvans.Count(); j++)
+                {
+                    var onehocvan = new ModelHocVan();
+                    var capbac = chromeDriver.FindElements(By.CssSelector("#education ._52jc._52ja"))[j].Text;
+                    if (capbac == "Trường trung học")
+                    {
+                        onehocvan.type = TypeHocVan.trunghoc;
+                    }
+                    else
+                    {
+                        onehocvan.type = TypeHocVan.daihoc;
+                    }
+                    onehocvan.isToNow = false;
+                    onehocvan.name = chromeDriver.FindElements(By.CssSelector("#education ._52jd._52jb._3-8_"))[j].Text;
+                    try
+                    {
+                        var time = chromeDriver.FindElements(By.CssSelector("#education ._52jc._52j9"))[j].Text;
+                        var times = time.Split('-');
+                        if (times.Count() == 2)
+                        {
+                            for (int i = 0; i < 2; i++)
+                            {
+                                var ngay = 1;
+                                var thang = 1;
+                                var nam = 1970;
+                                var regex = new Regex(@"\d{1,}").Matches(times[i]);
+                                if (regex.Count == 3)
+                                {
+                                    ngay = Convert.ToInt32(regex[0].Value);
+                                    thang = Convert.ToInt32(regex[1].Value);
+                                    nam = Convert.ToInt32(regex[2].Value);
+                                }
+                                else if (regex.Count == 2)
+                                {
+                                    thang = Convert.ToInt32(regex[0].Value);
+                                    nam = Convert.ToInt32(regex[1].Value);
+                                }
+                                else if (regex.Count == 1)
+                                {
+                                    nam = Convert.ToInt32(regex[0].Value);
+                                }
+                                if (i == 0)
+                                {
+                                    onehocvan.timeFrom = new DateTime(nam, thang, ngay);
+                                }
+                                else
+                                {
+                                    onehocvan.timeTo = new DateTime(nam, thang, ngay);
+                                }
+                            }
+
+                        }
+                        if (time.Contains("Hiện tại"))
+                        {
+                            onehocvan.isToNow = true;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                    }
+
+                    listHocVans.Add(onehocvan);
+                }
+            }
+            catch (Exception e)
+            {
+            }
+            return listHocVans;
+        }
+        private List<ModelCongViec> GetCongViecFromAboutAcc(IWebDriver chromeDriver)
+        {
+            var listHocVans = new List<ModelCongViec>();
+            try
+            {
+                var hocvans = chromeDriver.FindElements(By.CssSelector("#work ._5cds._2lcw"));
+                for (int j = 0; j < hocvans.Count(); j++)
+                {
+                    var onehocvan = new ModelCongViec();
+                    onehocvan.isToNow = false;
+                    onehocvan.name = chromeDriver.FindElements(By.CssSelector("#work ._52jd._52jb._3-8_"))[j].Text;
+                    try
+                    {
+                        var time = chromeDriver.FindElements(By.CssSelector("#work ._5cds._2lcw"))[j].FindElement(By.CssSelector("._52jc._52j9")).Text;
+                        var times = time.Split('-');
+                        if (times.Count() == 2)
+                        {
+                            for (int i = 0; i < 2; i++)
+                            {
+                                var ngay = 1;
+                                var thang = 1;
+                                var nam = 1970;
+                                var regex = new Regex(@"\d{1,}").Matches(times[i]);
+                                if (regex.Count == 3)
+                                {
+                                    ngay = Convert.ToInt32(regex[0].Value);
+                                    thang = Convert.ToInt32(regex[1].Value);
+                                    nam = Convert.ToInt32(regex[2].Value);
+                                }
+                                else if (regex.Count == 2)
+                                {
+                                    thang = Convert.ToInt32(regex[0].Value);
+                                    nam = Convert.ToInt32(regex[1].Value);
+                                }
+                                else if (regex.Count == 1)
+                                {
+                                    nam = Convert.ToInt32(regex[0].Value);
+                                }
+                                if (i == 0)
+                                {
+                                    onehocvan.timeFrom = new DateTime(nam, thang, ngay);
+                                }
+                                else
+                                {
+                                    onehocvan.timeTo = new DateTime(nam, thang, ngay);
+                                }
+                            }
+
+                        }
+                        if (time.Contains("Hiện tại"))
+                        {
+                            onehocvan.isToNow = true;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                    }
+
+                    listHocVans.Add(onehocvan);
+                }
+            }
+            catch (Exception e)
+            {
+            }
+            return listHocVans;
+        }
+        private string GetMotaFromAboutAcc(IWebDriver chromeDriver)
+        {
+            try
+            {
+                return chromeDriver.FindElement(By.CssSelector(".bv.bw.bx>div:nth-child(2)")).Text;
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        }
+        private List<string> ConvertSrcToLink(List<string> srcimgs)
+        {
+            var listLinks = new List<string>();
+            using (System.Net.WebClient webClient = new System.Net.WebClient())
+            {
+                foreach (var srcimg in srcimgs)
+                {
+                    var link = Guid.NewGuid().ToString();
+                    webClient.DownloadFile($"{srcimg}", $"img\\{link}.png");
+                    listLinks.Add($"{Directory.GetCurrentDirectory()}\\img\\{link}.png");
+                }
+            }
+            return listLinks;
+        }
+        private (List<string> images, string nameUid, bool error) GetSrcsImgFromUID(IWebDriver chromeDriver, string uidFb)
+        {
+            chromeDriver.Url = UrlAlbulmImageMFa(uidFb);
+            var tenBanBe = chromeDriver.FindElement(By.XPath("//a[@data-sigil='MBackNavBarClick']")).Text;
+            var listAlbumEles = chromeDriver.FindElements(By.XPath("//div[@class='item _50lb tall acw abb']"));
+            var listLinkImg = new List<string>();
+            for (int i = 0; i < listAlbumEles.Count() && i < 2; i++)
+            {
+                chromeDriver.FindElements(By.XPath("//div[@class='item _50lb tall acw abb']"))[i].Click();
+
+                listLinkImg.AddRange(chromeDriver.FindElements(By.XPath("//img[@class='_8brl']")).Where((x, index) => index < 7).Select(x => x.GetAttribute("src")).ToList());
+                if (i < listAlbumEles.Count() && i < 2 - 1)
+                {
+                    chromeDriver.Navigate().Back();
+                }
+            }
+            if (chromeDriver.PageSource.Contains("Để bảo vệ cộng đồng khỏi spam, chúng tôi giới hạn tần suất bạn đăng bài, bình luận hoặc làm các việc khác trong khoảng thời gian nhất định.") || chromeDriver.Url.Contains("checkpoint"))
+            {
+                return (null, null, true);
+            }
+            return (listLinkImg, tenBanBe, false);
+        }
         #endregion
 
         #region changeinfor
-        public bool ChangeAvartar(IWebDriver chromeDriver, string urlimg)
+        public bool ChangeThongtinFollowUid(IWebDriver chromeDriver, string uid)
         {
-            getProfileCopy(chromeDriver, "100002657636543");
+            var dataProfileCopy = getProfileCopy(chromeDriver, uid);
 
+            ChangeAvartar(chromeDriver, dataProfileCopy.linkAvata);
+            Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
 
-            var link1 = "https://scontent-hkg4-1.xx.fbcdn.net/v/t1.0-0/cp0/e15/q65/c0.341.2048.683a/s600x600/119448350_3153991791366044_7946483951100073213_o.jpg?_nc_cat=110&_nc_sid=3346a0&efg=eyJpIjoiYiJ9&_nc_ohc=b6QeZqILGkIAX_sPhEb&_nc_ht=scontent-hkg4-1.xx&oh=fd790b07a32f52f0961dac42bb1579d9&oe=5F8F4D85";
+            ChangeAnhBia(chromeDriver, dataProfileCopy.linkAnhBia);
+            Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
 
-            var link2 = "https://scontent.fhan5-5.fna.fbcdn.net/v/t1.0-1/fr/cp0/e15/q65/105034875_2914943528604206_205512394570547213_n.jpg?_nc_cat=101&_nc_sid=dbb9e7&efg=eyJpIjoiYiJ9&_nc_ohc=-mhO-gek03MAX-sSR4m&_nc_ht=scontent.fhan5-5.fna&tp=14&oh=200885ada808a124a99f3157d55d6f19&oe=5F90E784";
+            ChangeMoTaBanThan(chromeDriver, dataProfileCopy.motaBanThan);
+            Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
 
+            ChangeGioiTinh(chromeDriver, dataProfileCopy.gioiTinh);
+            Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
 
+            AddThanhPhoHienTaiVaQueQuan(chromeDriver, dataProfileCopy.listNoiSongs);
+            Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
 
-            using (System.Net.WebClient webClient = new System.Net.WebClient())
-            {
-                webClient.DownloadFile($"{link2}", "img\\image.png");
-            }
+            AddCongViec(chromeDriver, dataProfileCopy.listCongVIec);
+            Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
+
+            AddHocVans(chromeDriver, dataProfileCopy.listHocVans);
+            Common.Delay((new Random()).Next(_timeDelayBackupFrom, _timeDelayBackupTo));
+
+            return true;
+        }
+        private bool ChangeAvartar(IWebDriver chromeDriver, string urlimg)
+        {
             chromeDriver.Url = _urlChangeInfor;
             try
             {
@@ -1122,7 +1352,6 @@ namespace autohana
                 chromeDriver.FindElement(By.XPath("//input[@id='nuxPicFileInput']")).SendKeys(urlimg);
                 Thread.Sleep(1000);
                 chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh đại diện']")).Click();
-                Thread.Sleep(1000);
             }
             catch (Exception e)
             {
@@ -1130,7 +1359,7 @@ namespace autohana
             }
             return true;
         }
-        public bool ChangeAnhBia(IWebDriver chromeDriver, string urlimg)
+        private bool ChangeAnhBia(IWebDriver chromeDriver, string urlimg)
         {
             chromeDriver.Url = _urlChangeInfor;
             try
@@ -1142,7 +1371,6 @@ namespace autohana
                 chromeDriver.FindElement(By.XPath("//input[@id='nuxPicFileInput']")).SendKeys(urlimg);
                 Thread.Sleep(1000);
                 chromeDriver.FindElement(By.XPath("//button[@value='Đặt làm ảnh bìa']")).Click();
-                Thread.Sleep(1000);
             }
             catch (Exception)
             {
@@ -1150,7 +1378,7 @@ namespace autohana
             }
             return true;
         }
-        public bool ChangeMoTaBanThan(IWebDriver chromeDriver, string urlimg)
+        private bool ChangeMoTaBanThan(IWebDriver chromeDriver, string urlimg)
         {
             chromeDriver.Url = _urlChangeMota;
             try
@@ -1159,7 +1387,6 @@ namespace autohana
                 chromeDriver.FindElement(By.XPath("//textarea[@name='bio']")).SendKeys(urlimg);
                 Thread.Sleep(1000);
                 chromeDriver.FindElement(By.XPath("//input[@value='Lưu']")).Click();
-                Thread.Sleep(1000);
             }
             catch (Exception)
             {
@@ -1167,41 +1394,70 @@ namespace autohana
             }
             return true;
         }
-        public bool ChangeThongtin(IWebDriver chromeDriver, string urlimg)
+        private bool ChangeGioiTinh(IWebDriver chromeDriver, string gender)
         {
-            AddThanhPhoHienTaiVaQueQuan(chromeDriver, "Haiphong, Hải Phòng, Vietnam", "Hải Phòng");
-            AddCongViec(chromeDriver, "Trường Thpt Ngô Quyền", new DateTime(2013, 9, 5), null, true);
-            AddHocVanDaiHoc(chromeDriver, "VIMARU Vietnam Maritime University", new DateTime(2013, 9, 5), null, true);
-            AddHocVanTrungHoc(chromeDriver, "Trường Thpt Ngô Quyền", new DateTime(2013, 9, 5), null, true);
+            chromeDriver.Url = "https://m.facebook.com/profile/edit/infotab/section/forms/?section=basic-info";
+            try
+            {
+                if (gender == "Nam")
+                {
+                    chromeDriver.FindElement(By.XPath("//span[text()='Nam']")).Click();
+                }
+                else
+                {
+                    chromeDriver.FindElement(By.XPath("//span[text()='Nữ']")).Click();
+                }
+                Thread.Sleep(1000);
+            }
+            catch (Exception)
+            {
+            }
+            chromeDriver.FindElement(By.XPath("//button[@name='save']")).Click();
             return true;
         }
 
-        private bool AddHocVanDaiHoc(IWebDriver chromeDriver, string nameWork, DateTime? timeFrom = null, DateTime? timeTo = null, bool isLeanToNow = false)
+        private bool AddHocVans(IWebDriver chromeDriver, List<ModelHocVan> hocVans)
+        {
+            foreach (var hocVan in hocVans)
+            {
+                if (hocVan.type == TypeHocVan.daihoc)
+                {
+                    AddHocVanDaiHoc(chromeDriver, hocVan);
+                }
+                else
+                {
+                    AddHocVanTrungHoc(chromeDriver, hocVan);
+                }
+            }
+            return true;
+        }
+        private bool AddHocVanDaiHoc(IWebDriver chromeDriver, ModelHocVan hocvan)
         {
             chromeDriver.Url = "https://m.facebook.com/profile/edit/infotab/section/forms/?life_event_surface=mtouch_profile&section=education&experience_type=2004";
             try
             {
-                chromeDriver.FindElement(By.XPath("//input[@name='college_school_text']")).SendKeys(nameWork);
+                chromeDriver.FindElement(By.XPath("//input[@name='college_school_text']")).Clear();
+                chromeDriver.FindElement(By.XPath("//input[@name='college_school_text']")).SendKeys(hocvan.name);
                 Thread.Sleep(1000);
                 chromeDriver.FindElement(By.XPath("//div[@id='u_0_5']")).Click();
                 var id = chromeDriver.FindElement(By.XPath("//div[@data-sigil=' jx-result']")).GetAttribute("rel");
                 IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
                 js.ExecuteScript($"document.getElementById('u_0_2').setAttribute('value', '{id}')");
-                if (timeFrom != null)
+                if (hocvan.timeFrom != null)
                 {
                     SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_year']")));
-                    dropdown.SelectByText(timeFrom?.Year.ToString());
+                    dropdown.SelectByText(hocvan.timeFrom?.Year.ToString());
                     dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_month']")));
-                    dropdown.SelectByText($"Tháng {timeFrom?.Month.ToString()}");
+                    dropdown.SelectByText($"Tháng {hocvan.timeFrom?.Month.ToString()}");
                     dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_day']")));
-                    dropdown.SelectByText($"{timeFrom?.Day.ToString()}");
+                    dropdown.SelectByText($"{hocvan.timeFrom?.Day.ToString()}");
                 }
                 else
                 {
                     SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_year']")));
                     dropdown.SelectByText("Năm");
                 }
-                if (isLeanToNow == true)
+                if (hocvan.isToNow == true)
                 {
                     var checkbox = chromeDriver.FindElement(By.XPath("//input[@name='graduated']"));
                     if (!checkbox.Selected)
@@ -1209,14 +1465,14 @@ namespace autohana
                 }
                 else
                 {
-                    if (timeTo != null)
+                    if (hocvan.timeTo != null)
                     {
                         SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_year']")));
-                        dropdown.SelectByText(timeTo?.Year.ToString());
+                        dropdown.SelectByText(hocvan.timeTo?.Year.ToString());
                         dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_month']")));
-                        dropdown.SelectByText($"Tháng {timeTo?.Month.ToString()}");
+                        dropdown.SelectByText($"Tháng {hocvan.timeTo?.Month.ToString()}");
                         dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_day']")));
-                        dropdown.SelectByText($"{timeTo?.Day.ToString()}");
+                        dropdown.SelectByText($"{hocvan.timeTo?.Day.ToString()}");
                     }
                     else
                     {
@@ -1230,17 +1486,17 @@ namespace autohana
             }
             catch (Exception)
             {
-
+                return false;
             }
             return true;
         }
-
-        private bool AddHocVanTrungHoc(IWebDriver chromeDriver, string nameWork, DateTime? timeFrom = null, DateTime? timeTo = null, bool isLeanToNow = false)
+        private bool AddHocVanTrungHoc(IWebDriver chromeDriver, ModelHocVan hocvan)
         {
             chromeDriver.Url = "https://m.facebook.com/profile/edit/infotab/section/forms/?life_event_surface=mtouch_profile&section=education&experience_type=2003";
             try
             {
-                chromeDriver.FindElement(By.XPath("//input[@name='hs_school_text']")).SendKeys(nameWork);
+                chromeDriver.FindElement(By.XPath("//input[@name='hs_school_text']")).Clear();
+                chromeDriver.FindElement(By.XPath("//input[@name='hs_school_text']")).SendKeys(hocvan.name);
                 Thread.Sleep(1000);
                 chromeDriver.FindElement(By.XPath("//div[@id='u_0_h']")).Click();
                 var id = chromeDriver.FindElement(By.XPath("//div[@data-sigil=' jx-result']")).GetAttribute("rel");
@@ -1252,21 +1508,21 @@ namespace autohana
                     chromeDriver.FindElement(By.XPath("//span[@class='_2pir _592p _3fc5']")).Click();
                 }
 
-                if (timeFrom != null)
+                if (hocvan.timeFrom != null)
                 {
                     SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_year']")));
-                    dropdown.SelectByText(timeFrom?.Year.ToString());
+                    dropdown.SelectByText(hocvan.timeFrom?.Year.ToString());
                     dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_month']")));
-                    dropdown.SelectByText($"Tháng {timeFrom?.Month.ToString()}");
+                    dropdown.SelectByText($"Tháng {hocvan.timeFrom?.Month.ToString()}");
                     dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_day']")));
-                    dropdown.SelectByText($"{timeFrom?.Day.ToString()}");
+                    dropdown.SelectByText($"{hocvan.timeFrom?.Day.ToString()}");
                 }
                 else
                 {
                     SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_year']")));
                     dropdown.SelectByText("Năm");
                 }
-                if (isLeanToNow == true)
+                if (hocvan.isToNow == true)
                 {
                     var checkbox = chromeDriver.FindElement(By.XPath("//input[@name='graduated']"));
                     if (!checkbox.Selected)
@@ -1274,14 +1530,14 @@ namespace autohana
                 }
                 else
                 {
-                    if (timeTo != null)
+                    if (hocvan.timeTo != null)
                     {
                         SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_year']")));
-                        dropdown.SelectByText(timeTo?.Year.ToString());
+                        dropdown.SelectByText(hocvan.timeTo?.Year.ToString());
                         dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_month']")));
-                        dropdown.SelectByText($"Tháng {timeTo?.Month.ToString()}");
+                        dropdown.SelectByText($"Tháng {hocvan.timeTo?.Month.ToString()}");
                         dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_day']")));
-                        dropdown.SelectByText($"{timeTo?.Day.ToString()}");
+                        dropdown.SelectByText($"{hocvan.timeTo?.Day.ToString()}");
                     }
                     else
                     {
@@ -1295,130 +1551,119 @@ namespace autohana
             }
             catch (Exception)
             {
+                return false;
             }
             return true;
         }
-
-        private bool AddThanhPhoHienTaiVaQueQuan(IWebDriver chromeDriver, string nameCityNow, string nameHomeTown)
+        private bool AddThanhPhoHienTaiVaQueQuan(IWebDriver chromeDriver, List<ModelNoiSong> listNoiSongs)
         {
             chromeDriver.Url = "https://m.facebook.com/profile/edit/infotab/section/forms/?info_surface=info&section=living";
             try
             {
-                chromeDriver.FindElement(By.XPath("//input[@name='current_city_text']")).Clear();
-                chromeDriver.FindElement(By.XPath("//input[@name='current_city_text']")).SendKeys(nameCityNow);
-                Thread.Sleep(1000);
-                chromeDriver.FindElement(By.XPath("//div[@role='heading']")).Click();
-                var id = chromeDriver.FindElement(By.XPath("//div[@data-sigil=' jx-result']")).GetAttribute("rel");
                 IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
-                js.ExecuteScript($"document.getElementsByName('current_city')[0].setAttribute('value', '{id}')");
-                var dem = chromeDriver.FindElements(By.XPath("//div[@data-sigil=' jx-result']")).Count();
-
-                chromeDriver.FindElement(By.XPath("//input[@name='hometown_text']")).Clear();
-                chromeDriver.FindElement(By.XPath("//input[@name='hometown_text']")).SendKeys(nameHomeTown);
-                Thread.Sleep(1000);
-                chromeDriver.FindElement(By.XPath("//div[@role='heading']")).Click();
-                id = chromeDriver.FindElements(By.XPath("//div[@data-sigil=' jx-result']"))[dem].GetAttribute("rel");
-                js.ExecuteScript($"document.getElementsByName('hometown')[0].setAttribute('value', '{id}')");
-
-                Thread.Sleep(1000);
-                chromeDriver.FindElement(By.XPath("//button[@name='save']")).Click();
-                Thread.Sleep(1500);
-            }
-            catch (Exception)
-            {
-
-            }
-            return true;
-        }
-
-        private bool AddCongViec(IWebDriver chromeDriver, string nameWork, DateTime? timeFrom = null, DateTime? timeTo = null, bool isLeanToNow = false)
-        {
-            chromeDriver.Url = "https://m.facebook.com/profile/edit/infotab/section/forms/?life_event_surface=mtouch_profile&section=work&experience_type=2002";
-            try
-            {
-                chromeDriver.FindElement(By.XPath("//input[@name='employer_text']")).Clear();
-                chromeDriver.FindElement(By.XPath("//input[@name='employer_text']")).SendKeys(nameWork);
-                Thread.Sleep(1000);
-                chromeDriver.FindElement(By.XPath("//div[@role='heading']")).Click();
-                var id = chromeDriver.FindElement(By.XPath("//div[@data-sigil=' jx-result']")).GetAttribute("rel");
-                IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
-                js.ExecuteScript($"document.getElementById('u_0_2').setAttribute('value', '{id}')");
-                if (!chromeDriver.FindElement(By.XPath("//input[@name='junk']")).Selected)
+                var dem = 0;
+                foreach (var noiSong in listNoiSongs)
                 {
-                    chromeDriver.FindElement(By.XPath("//span[text()='Đây không phải là địa điểm thực tế']")).Click();
-                }
-                if (timeFrom != null)
-                {
-                    SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_year']")));
-                    dropdown.SelectByText(timeFrom?.Year.ToString());
-                    dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_month']")));
-                    dropdown.SelectByText($"Tháng {timeFrom?.Month.ToString()}");
-                    dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_day']")));
-                    dropdown.SelectByText($"{timeFrom?.Day.ToString()}");
-                }
-                else
-                {
-                    SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_year']")));
-                    dropdown.SelectByText("Năm");
-                }
-                if (isLeanToNow == true)
-                {
-                    if (!chromeDriver.FindElement(By.XPath("//input[@name='current']")).Selected)
+                    if (noiSong.type == TypeDiaChi.ThanhPhoHienTai)
                     {
-                        chromeDriver.FindElement(By.XPath("//span[text()='Tôi hiện đang làm việc ở đây']")).Click();
-                    }
-                }
-                else
-                {
-                    if (timeTo != null)
-                    {
-                        SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_year']")));
-                        dropdown.SelectByText(timeTo?.Year.ToString());
-                        dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_month']")));
-                        dropdown.SelectByText($"Tháng {timeTo?.Month.ToString()}");
-                        dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_day']")));
-                        dropdown.SelectByText($"{timeTo?.Day.ToString()}");
+                        chromeDriver.FindElement(By.XPath("//input[@name='current_city_text']")).Clear();
+                        chromeDriver.FindElement(By.XPath("//input[@name='current_city_text']")).SendKeys(noiSong.name);
+                        Thread.Sleep(1000);
+                        chromeDriver.FindElement(By.XPath("//div[@role='heading']")).Click();
+                        var id = chromeDriver.FindElement(By.XPath("//div[@data-sigil=' jx-result']")).GetAttribute("rel");
+                        js.ExecuteScript($"document.getElementsByName('current_city')[0].setAttribute('value', '{id}')");
+                        dem = chromeDriver.FindElements(By.XPath("//div[@data-sigil=' jx-result']")).Count();
                     }
                     else
                     {
-                        SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_year']")));
-                        dropdown.SelectByText("Năm");
+                        chromeDriver.FindElement(By.XPath("//input[@name='hometown_text']")).Clear();
+                        chromeDriver.FindElement(By.XPath("//input[@name='hometown_text']")).SendKeys(noiSong.name);
+                        Thread.Sleep(1000);
+                        chromeDriver.FindElement(By.XPath("//div[@role='heading']")).Click();
+                        var id = chromeDriver.FindElements(By.XPath("//div[@data-sigil=' jx-result']"))[dem].GetAttribute("rel");
+                        js.ExecuteScript($"document.getElementsByName('hometown')[0].setAttribute('value', '{id}')");
+
                     }
                 }
+
                 Thread.Sleep(1000);
                 chromeDriver.FindElement(By.XPath("//button[@name='save']")).Click();
             }
             catch (Exception)
             {
-
             }
-            Thread.Sleep(1500);
             return true;
         }
-
-        private bool ChangeGioiTinh(IWebDriver chromeDriver, GenderEnum gender)
+        private bool AddCongViec(IWebDriver chromeDriver, List<ModelCongViec> congViecs)
         {
-            chromeDriver.Url = "https://m.facebook.com/profile/edit/infotab/section/forms/?section=basic-info";
+            IJavaScriptExecutor js = (IJavaScriptExecutor)chromeDriver;
             try
             {
-                if (gender == GenderEnum.Man)
+                foreach (var congViec in congViecs)
                 {
-                    chromeDriver.FindElement(By.XPath("//span[text()='Nữ']")).Click();
+                    chromeDriver.Url = "https://m.facebook.com/profile/edit/infotab/section/forms/?life_event_surface=mtouch_profile&section=work&experience_type=2002";
+                    chromeDriver.FindElement(By.XPath("//input[@name='employer_text']")).Clear();
+                    chromeDriver.FindElement(By.XPath("//input[@name='employer_text']")).SendKeys(congViec.name);
+                    Thread.Sleep(1000);
+                    chromeDriver.FindElement(By.XPath("//div[@role='heading']")).Click();
+                    var id = chromeDriver.FindElement(By.XPath("//div[@data-sigil=' jx-result']")).GetAttribute("rel");
+                    js.ExecuteScript($"document.getElementById('u_0_2').setAttribute('value', '{id}')");
+                    if (!chromeDriver.FindElement(By.XPath("//input[@name='junk']")).Selected)
+                    {
+                        chromeDriver.FindElement(By.XPath("//span[text()='Đây không phải là địa điểm thực tế']")).Click();
+                    }
+                    if (congViec.timeFrom != null && congViec.timeFrom != new DateTime(1970, 1, 1))
+                    {
+                        SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_year']")));
+                        dropdown.SelectByText(congViec.timeFrom?.Year.ToString());
+                        dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_month']")));
+                        dropdown.SelectByText($"Tháng {congViec.timeFrom?.Month.ToString()}");
+                        dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_day']")));
+                        dropdown.SelectByText($"{congViec.timeFrom?.Day.ToString()}");
+                    }
+                    else
+                    {
+                        SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='start_year']")));
+                        dropdown.SelectByText("Năm");
+                    }
+                    if (congViec.isToNow == true)
+                    {
+                        if (!chromeDriver.FindElement(By.XPath("//input[@name='current']")).Selected)
+                        {
+                            chromeDriver.FindElement(By.XPath("//span[text()='Tôi hiện đang làm việc ở đây']")).Click();
+                        }
+                    }
+                    else
+                    {
+                        if (congViec.timeTo != null && congViec.timeTo != new DateTime(1970, 1, 1))
+                        {
+                            SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_year']")));
+                            dropdown.SelectByText(congViec.timeTo?.Year.ToString());
+                            dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_month']")));
+                            dropdown.SelectByText($"Tháng {congViec.timeTo?.Month.ToString()}");
+                            dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_day']")));
+                            dropdown.SelectByText($"{congViec.timeTo?.Day.ToString()}");
+                        }
+                        else
+                        {
+                            SelectElement dropdown = new SelectElement(chromeDriver.FindElement(By.XPath("//select[@name='end_year']")));
+                            dropdown.SelectByText("Năm");
+                        }
+                    }
+                    Thread.Sleep(1000);
+                    chromeDriver.FindElement(By.XPath("//button[@name='save']")).Click();
+                    Thread.Sleep(1500);
                 }
-                else
-                {
-                    chromeDriver.FindElement(By.XPath("//span[text()='Nam']")).Click();
-                }
-                Thread.Sleep(1000);
             }
             catch (Exception)
             {
+
             }
-            chromeDriver.FindElement(By.XPath("//button[@name='save']")).Click();
-            Thread.Sleep(1500);
             return true;
         }
         #endregion
+
+
 
         public void ChoClickButtonFB(string nameJob = "thao tác")
         {
@@ -1484,7 +1729,7 @@ namespace autohana
         }
         public void LocNguoiDung(IWebDriver chromeDriver, int rowIndex)
         {
-            var rsLogin = Login(chromeDriver);
+            var rsLogin = DangNhap();
             if (rsLogin.rs == false) { return; }
             dgvAccounts["status", rowIndex].Value = $"Loc thành viên tương tác thật";
             try

@@ -73,6 +73,8 @@
             this.button1 = new System.Windows.Forms.Button();
             this.isCheckBackUpFriendNew = new System.Windows.Forms.CheckBox();
             this.locthanhvien = new System.Windows.Forms.Button();
+            this.nuoinick = new System.Windows.Forms.CheckBox();
+            this.numberAction = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.delayFrom)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.delayTo)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.JobMaxOfDay)).BeginInit();
@@ -507,9 +509,32 @@
             this.locthanhvien.UseVisualStyleBackColor = true;
             this.locthanhvien.Click += new System.EventHandler(this.locthanhvien_Click);
             // 
+            // nuoinick
+            // 
+            this.nuoinick.AutoSize = true;
+            this.nuoinick.Checked = true;
+            this.nuoinick.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.nuoinick.Location = new System.Drawing.Point(824, 62);
+            this.nuoinick.Name = "nuoinick";
+            this.nuoinick.Size = new System.Drawing.Size(71, 17);
+            this.nuoinick.TabIndex = 39;
+            this.nuoinick.Text = "Nuôi nick";
+            this.nuoinick.UseVisualStyleBackColor = true;
+            this.nuoinick.CheckedChanged += new System.EventHandler(this.nuoinick_CheckedChanged);
+            // 
+            // numberAction
+            // 
+            this.numberAction.Location = new System.Drawing.Point(913, 60);
+            this.numberAction.Name = "numberAction";
+            this.numberAction.Size = new System.Drawing.Size(79, 20);
+            this.numberAction.TabIndex = 40;
+            this.numberAction.Text = "30";
+            // 
             // Auto
             // 
             this.ClientSize = new System.Drawing.Size(1313, 688);
+            this.Controls.Add(this.numberAction);
+            this.Controls.Add(this.nuoinick);
             this.Controls.Add(this.locthanhvien);
             this.Controls.Add(this.isCheckBackUpFriendNew);
             this.Controls.Add(this.button1);
@@ -587,6 +612,8 @@
         private System.Windows.Forms.DataGridViewButtonColumn Action;
         private System.Windows.Forms.DataGridViewTextBoxColumn UserAgent;
         private System.Windows.Forms.Button locthanhvien;
+        private System.Windows.Forms.CheckBox nuoinick;
+        private System.Windows.Forms.TextBox numberAction;
     }
 }
 
