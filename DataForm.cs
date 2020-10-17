@@ -7,13 +7,15 @@ using System.Windows.Forms;
 
 namespace autohana
 {
-    public class DungChung
+    public class DataForm
     {
-
-        public DungChung()
+        DataGridView dgvAccounts;
+        public DataForm(DataGridView dgvAccounts)
         {
-
+            this.dgvAccounts = dgvAccounts;
         }
+
+
 
         public void ChangeCheckBox(DataGridViewCell dataGridViewCell, bool valueOld)
         {

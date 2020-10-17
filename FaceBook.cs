@@ -73,8 +73,8 @@ namespace autohana
         // trả vể uId
         public (bool rs, Modelfb data) DangNhap()
         {
-            dgvAccounts["status", rowIndex].Value = "Đi đăng nhập Facebook";
             chromeDriver.Url = _urlLogin;
+            dgvAccounts["status", rowIndex].Value = "Đi đăng nhập Facebook";
             if (LaCheckPoint())
             {
                 return (false, Modelfb.isCheckpoint);
@@ -86,7 +86,7 @@ namespace autohana
             }
             else
             {
-                if (dgvAccounts.Rows[rowIndex].Cells["cookie"].Value != null)
+                if (dgvAccounts.Rows[rowIndex].Cells["cookie"].Value.ToString() != "")
                 {
                     dgvAccounts["status", rowIndex].Value = "Đăng nhập Fb bằng cookie";
                     DangNhapVoiCookie(dgvAccounts.Rows[rowIndex].Cells["cookie"].Value.ToString());
@@ -112,8 +112,7 @@ namespace autohana
                 if (!LaTrangDangNhap())
                 {
                     dgvAccounts["status", rowIndex].Value = "Đăng nhập faceBook thành công";
-                    var cookie = GetCookieFb(chromeDriver);
-                    dgvAccounts.Rows[rowIndex].Cells["cookie"].Value = cookie.ToString();
+                    DocGhiFile.GhiFileConfig(0, VitriGhiEnum.cookie, GetCookieFb());
                     return (true, Modelfb.isLoginOk);
                 }
             }
@@ -147,16 +146,15 @@ namespace autohana
                 }
             }
         }
-        public ReadOnlyCollection<Cookie> GetCookieFb(IWebDriver chromeDriver)
+        public string GetCookieFb()
         {
             var cookie = chromeDriver.Manage().Cookies.AllCookies;
-            //Cookie listCookie = cookie.Where(x=>x.sp)
-            var str = "";
+            var cookieNew = "";
             foreach (var item in cookie)
             {
-                str += item.ToString().Split(';')[0] + ";";
+                cookieNew += item.Name + "=" + item.Value + ";";
             }
-            return cookie;
+            return cookieNew;
         }
         // truyên trang home fb
         public string GetUserIdFromCookie()
@@ -186,6 +184,7 @@ namespace autohana
                     chromeDriver.FindElement(By.Name("submit[Submit Code]")).Click();
                     chromeDriver.FindElement(By.Name("submit[Continue]")).Click();
                 }
+
             }
             catch (Exception e)
             {
@@ -1686,7 +1685,7 @@ namespace autohana
         #region Menu
         public void BackUpFacebookAll(IWebDriver chromeDriver, int rowIndex)
         {
-            var uidFb = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
+            var uidFb = GetUserIdFromCookie();
             BackupThongTinCoBan(chromeDriver, uidFb);
             DocGhiFile.CreadFolder($"BackUp/{uidFb}/anhbanbe");
             BackUpAnhBanBe(chromeDriver, uidFb);
@@ -1694,7 +1693,7 @@ namespace autohana
         }
         public void BackUpFacebookOnlyImageFriend(IWebDriver chromeDriver, int rowIndex)
         {
-            var uidFb = GetCookieFb(chromeDriver).FirstOrDefault(x => x.Name == "c_user").Value;
+            var uidFb = GetUserIdFromCookie();
             DocGhiFile.CreadFolder($"BackUp/{uidFb}/anhbanbe");
             BackUpAnhBanBe(chromeDriver, uidFb);
             BackUpBaoMat(chromeDriver, uidFb);

@@ -16,11 +16,8 @@ namespace autohana
         DataGridView dgvAccounts;
         int rowIndex;
         ChromeOptions chromeOptions;
-        //IWebDriver chromeDriver;
         ChromeDriverService chromeDriverService;
-        public Chrome(DataGridView dgvAccounts, int rowIndex, ChromeDriverService chromeDriverService, ChromeOptions chromeOptions
-            //, ref IWebDriver chromeDriver
-            )
+        public Chrome(DataGridView dgvAccounts, int rowIndex, ChromeDriverService chromeDriverService, ChromeOptions chromeOptions)
         {
             this.dgvAccounts = dgvAccounts;
             this.rowIndex = rowIndex;

@@ -95,7 +95,7 @@
     <Compile Include="Capcha\TaskResultResponse.cs" />
     <Compile Include="Chrome.cs" />
     <Compile Include="Common.cs" />
-    <Compile Include="DungChung.cs" />
+    <Compile Include="DataForm.cs" />
     <Compile Include="Hana.cs">
       <SubType>Form</SubType>
     </Compile>

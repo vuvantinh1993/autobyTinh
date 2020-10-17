@@ -30,10 +30,6 @@ namespace autohana
         public Auto()
         {
             InitializeComponent();
-            this.socapdagiai.Text = "0";
-            this.soLanKhongGiaiDuoctien.Text = "0";
-            this.socapgiaikhongthanh.Text = "0";
-            this.sotiennhan.Text = "0";
             dgvAccounts.AutoGenerateColumns = false;
             this.dgvAccounts.DataSource = XLFile.DocFileTaiKhoan("config/accounts.txt");
         }
@@ -137,8 +133,59 @@ namespace autohana
                 }
             }
         }
-
         #endregion
+
+        private bool TaoChrome(int rowIndex)
+        {
+            ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
+            ChromeOptions chromeOptions = new ChromeOptions();
+            var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
+            if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex]))
+            {
+                return true;
+            }
+            return false;
+        }
+        private void RunMenu(ActionMenu actionMenu, int rowIndex)
+        {
+            Task t = new Task(() =>
+            {
+                if (!TaoChrome(rowIndex)) { return; }
+                var facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
+                if (actionMenu == ActionMenu.OpenChrome)
+                {
+                    return;
+                }
+                else
+                {
+                    var rsLogin = facebook.DangNhap();
+                    if (!rsLogin.rs)
+                    {
+                        return;
+                    }
+                    switch (actionMenu)
+                    {
+                        case ActionMenu.OpenFacebook:
+                            break;
+                        case ActionMenu.BackUpFacebookOnlyImageFriend:
+                            facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
+                            break;
+                        case ActionMenu.BackUpFacebookAll:
+                            facebook.BackUpFacebookAll(chromeDriver[rowIndex], rowIndex);
+                            break;
+                        case ActionMenu.ChayDangKiHana:
+                            break;
+                        case ActionMenu.QuetThanhVienGroup:
+                            facebook.QuetThanhVienGroup(chromeDriver[rowIndex], rowIndex);
+                            break;
+                        case ActionMenu.CommentGroup:
+                            break;
+                    }
+                }
+            });
+            t.Start();
+        }
+
 
         private void ChayJobHana(int rowIndex)
         {
@@ -150,7 +197,6 @@ namespace autohana
                 if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
 
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
-                UpdateValueFormForFb(ref facebook);
                 var rsLogin = facebook.DangNhap();
                 if (rsLogin.rs == false) { return; }
 
@@ -169,7 +215,6 @@ namespace autohana
                         while (true)
                         {
                             CheckStopAppAuto(rowIndex); // kiểm tra tạm dừng
-                            UpdateValueFormForFb(ref facebook);
 
                             dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Đi lấy Job Hana";
                             bool takeJob = hana.LayMotJobAndClick(chromeDriver[rowIndex], ref _soCapchaDagiai, ref _soCapchaDagiaiKhongthanh);
@@ -212,7 +257,6 @@ namespace autohana
                                 chromeDriver[rowIndex].Quit();
                                 return;
                             }
-                            LoadForm();
                         }
                     }
                     else
@@ -288,6 +332,7 @@ namespace autohana
             t.Start();
             Common.DelayMiliSeconde(1000);
         }
+
         public void CheckStopAppAuto(int rowIndex)
         {
             var checkStop = (bool)dgvAccounts.Rows[rowIndex].Cells["stop"].Value;
@@ -299,67 +344,6 @@ namespace autohana
                     Task.Delay(1000);
                 }
                 dgvAccounts.Rows[rowIndex].Cells["status"].Value = "Huỷ tạm dừng tiếp tục chạy";
-            }
-        }
-        public void UpdateValueFormForFb(ref FaceBook facebook)
-        {
-            this.delayFrom.Invoke(new Action(() =>
-            {
-                ldelayFrom = (int)this.delayFrom.Value;
-            }));
-            this.delayTo.Invoke(new Action(() =>
-            {
-                ldelayTo = (int)this.delayTo.Value;
-            }));
-            this.JobMaxOfDay.Invoke(new Action(() =>
-            {
-                ljobMaxOfDay = (int)this.JobMaxOfDay.Value;
-            }));
-            this.isCheckBackUpFriendNew.Invoke(new Action(() =>
-            {
-                lchiBackupnguoimoi1 = (bool)this.isCheckBackUpFriendNew.Checked;
-            }));
-            facebook.ChangeValueWithForm(ldelayFrom, ldelayTo, lchiBackupnguoimoi1);
-        }
-
-        private void ConvertData_Click(object sender, EventArgs e)
-        {
-            var accounts = System.IO.File.ReadAllLines("config/fileold.txt");
-            List<string> listAccountNew = new List<string>();
-            foreach (var item in accounts)
-            {
-                var splitItem = item.Split('|');
-                if (splitItem.Count() == 8)
-                {
-                    var c0 = splitItem[0];
-                    var c1 = splitItem[1];
-                    var c2 = splitItem[2];
-                    var c3 = splitItem[3];
-                    var c4 = splitItem[4]; // cookie
-                    var c5 = splitItem[5];
-                    var c6 = splitItem[6];
-                    var c7 = splitItem[7];
-                    var c8 = this.uidAddHana.Text;
-                    var c9 = this.passAddHana.Text;
-                    var c10 = "True";
-                    var c11 = "False";
-                    var c12 = "False";
-                    var c13 = "False";
-                    var c14 = "Bắt đầu";
-
-                    var str = c0 + '|' + c1 + '|' + c2 + '|' + c3 + '|' + c4 + '|' + c5 + '|' + c6 + '|' + c7 + '|' + c8 + '|' + c9 + '|' + c10 + '|' + c11 + '|' + c12 + '|' + c13 + '|' + c14;
-                    listAccountNew.Add(str);
-                }
-            }
-            if (!System.IO.File.Exists("config/accounts.txt"))
-            {
-                var file = System.IO.File.Create("config/accounts.txt");
-                file.Close();
-                System.IO.File.WriteAllLines("config/accounts.txt", listAccountNew);
-            }
-            else
-            {
-                System.IO.File.AppendAllLines("config/accounts.txt", listAccountNew);
             }
         }
 
@@ -376,27 +360,11 @@ namespace autohana
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            var accounts = System.IO.File.ReadAllLines("config/accounts.txt");
-            List<string> listAccountNew = new List<string>();
-            foreach (var item in accounts)
-            {
-                var splitItem = item.Split('|');
-                var str = $"{ splitItem[0] }|{ splitItem[1] }|{ splitItem[2] }|{ splitItem[5] }|{ splitItem[6] }|{ splitItem[7] }|{ splitItem[8] }|{ splitItem[9] }|{ splitItem[3] }|{ splitItem[4] }|{ splitItem[10] }|{ splitItem[11] }|{ splitItem[12] }|{ splitItem[13] }|{ splitItem[14]}|1";
-                listAccountNew.Add(str);
-            }
-            System.IO.File.WriteAllLines("config/account.txt", listAccountNew);
-        }
-
         private void NuoiNick(int rowIndex)
         {
             Task t = new Task(() =>
             {
-                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
-                ChromeOptions chromeOptions = new ChromeOptions();
-                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
-                if (!chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
+                if (!TaoChrome(rowIndex)) { return; }
                 var facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
                 var rsLogin = facebook.DangNhap();
                 if (!rsLogin.rs)
@@ -429,53 +397,7 @@ namespace autohana
             }
         }
 
-        private void RunMenu(ActionMenu actionMenu, int rowIndex)
-        {
-            Task t = new Task(() =>
-            {
-                ChromeDriverService chromeDriverService = ChromeDriverService.CreateDefaultService();
-                ChromeOptions chromeOptions = new ChromeOptions();
-                var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
-                if (!chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
-                var facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
-                if (actionMenu == ActionMenu.OpenChrome)
-                {
-                    return;
-                }
-                else
-                {
-                    var rsLogin = facebook.DangNhap();
-                    if (!rsLogin.rs)
-                    {
-                        return;
-                    }
-                    //facebook.ChangeThongtinFollowUid(chromeDriver[rowIndex], "12345678015525");
 
-
-                    //facebook.TrithongMinh(1, chromeDriver[rowIndex]);
-                    switch (actionMenu)
-                    {
-                        case ActionMenu.OpenFacebook:
-                            break;
-                        case ActionMenu.BackUpFacebookOnlyImageFriend:
-                            facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
-                            break;
-                        case ActionMenu.BackUpFacebookAll:
-                            facebook.BackUpFacebookAll(chromeDriver[rowIndex], rowIndex);
-                            break;
-                        case ActionMenu.ChayDangKiHana:
-                            break;
-                        case ActionMenu.QuetThanhVienGroup:
-                            facebook.QuetThanhVienGroup(chromeDriver[rowIndex], rowIndex);
-                            break;
-                        case ActionMenu.CommentGroup:
-                            //facebook.BackUpFacebookOnlyImageFriend(chromeDriver[rowIndex], rowIndex);
-                            break;
-                    }
-                }
-            });
-            t.Start();
-        }
 
 
 
@@ -488,7 +410,6 @@ namespace autohana
                 var chrome = new Chrome(dgvAccounts, rowIndex, chromeDriverService, chromeOptions);
                 if (chrome.SetUpChrome((bool)this.checkLoadImage.Checked, ref chromeDriver[rowIndex])) return;
                 FaceBook facebook = new FaceBook(dgvAccounts, rowIndex, chromeDriver[rowIndex]);
-                UpdateValueFormForFb(ref facebook);
                 var rsLogin = facebook.DangNhap();
                 if (rsLogin.rs == false) { return; }
                 facebook.MActionJobComment(chromeDriver[rowIndex]);
@@ -498,34 +419,6 @@ namespace autohana
         private void locthanhvien_Click(object sender, EventArgs e)
         {
         }
-
-
-
-        #region có thể sẽ bỏ Hana
-        private void UpdateSoCapDagiai(int socapchadagiai)
-        {
-            this.socapdagiai.Text = socapchadagiai.ToString();
-        }
-        private void UpdateSocapchadagiaikhongthanh(int socapchadagiaikhongthanh)
-        {
-            this.socapgiaikhongthanh.Text = socapchadagiaikhongthanh.ToString();
-        }
-        private void UpdateSotiendalam(int sotiendalam)
-        {
-            this.sotiennhan.Text = sotiendalam.ToString();
-        }
-        private void UpdateSolankhonggiaiduoctien(int solankhonggiaiduoctien)
-        {
-            this.soLanKhongGiaiDuoctien.Text = solankhonggiaiduoctien.ToString();
-        }
-        private void LoadForm()
-        {
-            this.socapdagiai.Invoke(new Action(() => UpdateSoCapDagiai(_soCapchaDagiai)));
-            this.socapgiaikhongthanh.Invoke(new Action(() => UpdateSocapchadagiaikhongthanh(_soCapchaDagiaiKhongthanh)));
-            this.sotiennhan.Invoke(new Action(() => UpdateSotiendalam(_soTienDalam)));
-            this.soLanKhongGiaiDuoctien.Invoke(new Action(() => UpdateSolankhonggiaiduoctien(_solanKhonggiaiduocTien)));
-        }
-        #endregion
 
         private void checkLoadImage_CheckedChanged(object sender, EventArgs e)
         {

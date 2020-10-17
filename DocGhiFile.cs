@@ -11,6 +11,7 @@ namespace autohana
     public static class DocGhiFile
     {
         //public static string teamplate = ""
+        public static string urlfileConfig = "config\\accounts.txt";
 
         public static void Write(string nameFolder, string content)
         {
@@ -212,53 +213,19 @@ namespace autohana
             return str;
         }
 
-        //private void ConvertData_Click(object sender, EventArgs e)
-        //{
-        //    var accounts = System.IO.File.ReadAllLines("config/fileold.txt");
-        //    List<string> listAccountNew = new List<string>();
-        //    foreach (var item in accounts)
-        //    {
-        //        var splitItem = item.Split('|');
-        //        if (splitItem.Count() == 8)
-        //        {
-        //            var c0 = splitItem[0];
-        //            var c1 = splitItem[1];
-        //            var c2 = splitItem[2];
-        //            var c3 = splitItem[3];
-        //            var c4 = splitItem[4]; // cookie
-        //            var c5 = splitItem[5];
-        //            var c6 = splitItem[6];
-        //            var c7 = splitItem[7];
-        //            var c8 = this.uidAddHana.Text;
-        //            var c9 = this.passAddHana.Text;
-        //            var c10 = "True";
-        //            var c11 = "False";
-        //            var c12 = "False";
-        //            var c13 = "False";
-        //            var c14 = "Bắt đầu";
-
-        //            var str = c0 + '|' + c1 + '|' + c2 + '|' + c3 + '|' + c4 + '|' + c5 + '|' + c6 + '|' + c7 + '|' + c8 + '|' + c9 + '|' + c10 + '|' + c11 + '|' + c12 + '|' + c13 + '|' + c14;
-        //            listAccountNew.Add(str);
-        //        }
-        //    }
-        //    if (!System.IO.File.Exists("config/accounts.txt"))
-        //    {
-        //        var file = System.IO.File.Create("config/accounts.txt");
-        //        file.Close();
-        //        System.IO.File.WriteAllLines("config/accounts.txt", listAccountNew);
-        //    }
-        //    else
-        //    {
-        //        System.IO.File.AppendAllLines("config/accounts.txt", listAccountNew);
-        //    }
-        //}
-
-
         public static void OpenFileBackUp(string uid)
         {
             Process.Start("explorer", $"{Environment.CurrentDirectory}\\BackUp\\{uid}");
         }
 
+        public static void GhiFileConfig(int index, VitriGhiEnum vitri, string giatri)
+        {
+            var accs = File.ReadAllLines(urlfileConfig);
+            var strs = accs[index].Split('|');
+            strs[(int)vitri] = giatri;
+            accs[index] = String.Join("|", strs);
+            File.WriteAllLines(urlfileConfig, accs);
+        }
     }
 
     public class UidAndName
@@ -266,4 +233,6 @@ namespace autohana
         public string Uid { get; set; }
         public string Name { get; set; }
     }
+
+
 }

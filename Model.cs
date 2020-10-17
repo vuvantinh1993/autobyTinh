@@ -41,6 +41,22 @@ namespace autohana
         trunghoc
     }
 
+    public enum VitriGhiEnum
+    {
+        stt,
+        tendangnhap,
+        matkhau,
+        tennguoidung,
+        tenTDS,
+        passTDS,
+        matKhau2Fa,
+        cookie,
+        RunTDS,
+        AnChrome,
+        TamDung,
+        TrangThai,
+    }
+
     public class ModelNoiSong
     {
         public string name { get; set; }
@@ -84,7 +100,10 @@ namespace autohana
         public string PassGolike { get; set; }
         public string Hana { get; set; }
         public string PassHana { get; set; }
+        public string NameTDS { get; set; }
+        public string PassTDS { get; set; }
         public bool RunHana { get; set; }
+        public bool RunTDS { get; set; }
         public bool RunGolike { get; set; }
         public bool An { get; set; }
         public bool Stop { get; set; }
